@@ -1,0 +1,9 @@
+{
+  "version":"2.0.0",
+  "tasks":[
+    {"label":"SimplyArticulate: Run locally","type":"npm","script":"dev","problemMatcher":[]},
+    {"label":"SimplyArticulate: Run checks","type":"npm","script":"test","problemMatcher":[]},
+    {"label":"SimplyArticulate: Check deployment settings","type":"npm","script":"deployment:check","problemMatcher":[]},
+    {"label":"SimplyArticulate: Prepare Netlify build","type":"npm","script":"build:netlify","group":"build","problemMatcher":[]}
+  ]
+}

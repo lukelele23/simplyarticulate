@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.netlify
+.vscode
+.env
+.env.*
+.ai-data
+work
+outputs
+*.log

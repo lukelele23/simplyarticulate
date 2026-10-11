@@ -1,0 +1,28 @@
+.analysis-panel { display: grid; gap: 16px; padding: 20px; border: 1px solid #494b4d; border-radius: 18px; background: #222830; text-align: left; min-width: 0; }
+.analysis-panel h2, .analysis-panel h3, .analysis-panel h4, .analysis-panel p { margin: 0; }
+.analysis-panel h2 { font-size: 1.3rem; color: #f3f5f7; }
+.analysis-panel p, .analysis-panel li { line-height: 1.65; overflow-wrap: anywhere; }
+.analysis-panel audio { width: 100%; }
+.analysis-muted { font-size: .82rem; color: #aec2d8; line-height: 1.6; }
+.analysis-notice { border: 1px solid #557e98; border-radius: 10px; padding: 12px; background: #17304a; color: #e1ebf1; line-height: 1.6; }
+.analysis-error { color: #ffb8b8; line-height: 1.6; }
+.analysis-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.analysis-actions button { flex: 1 1 180px; }
+.analysis-panel button:disabled { opacity: .55; cursor: not-allowed; }
+.analysis-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.analysis-metrics > div { display: grid; gap: 6px; padding: 14px; border: 1px solid #494b4d; border-radius: 12px; background: #303234; }
+.analysis-metrics strong { font-size: 1.75rem; color: #d8d9db; }
+.analysis-metrics span { color: #aec2d8; font-size: .8rem; }
+.analysis-transcript, .analysis-history { border: 1px solid #494b4d; border-radius: 10px; padding: 12px; }
+.analysis-transcript p, .analysis-history p { white-space: pre-wrap; padding-top: 10px; overflow-wrap: anywhere; }
+.analysis-transcript summary, .analysis-history summary { cursor: pointer; font-weight: 700; }
+.analysis-label { display: grid; gap: 10px; font-weight: 600; }
+.analysis-label textarea { width: 100%; min-height: 140px; resize: vertical; border: 1px solid #3d5d7b; border-radius: 10px; padding: 12px; background: #222830; color: #f3f5f7; font: inherit; font-weight: 400; line-height: 1.6; }
+.analysis-panel :focus-visible { outline: 2px solid #d0d2d4; outline-offset: 3px; }
+.analysis-coaching { display: grid; gap: 10px; }
+.analysis-coaching h4 { color: #d8d9db; margin-top: 6px; }
+.analysis-coaching blockquote, .analysis-history blockquote { margin: 0; padding: 10px 14px; border-left: 3px solid #d8d9db; background: #303234; line-height: 1.6; }
+.analysis-consent { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; line-height: 1.6; }
+.analysis-consent input { margin-top: 5px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #c7c9cb; }
+@media (min-width: 620px) { .analysis-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 380px) { .analysis-panel { padding: 12px; } .analysis-metrics { grid-template-columns: 1fr; } }

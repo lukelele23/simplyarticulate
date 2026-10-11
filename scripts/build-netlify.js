@@ -1,0 +1,12 @@
+import {build,loadEnv} from 'vite';
+import {writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {deploymentSettings,netlifyRedirects} from './deployment-config.js';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const env={...loadEnv('production',root,''),...process.env};
+const {backend}=deploymentSettings(env);
+for(const [name,value]of Object.entries(env))if(name.startsWith('VITE_'))process.env[name]=value;
+await build({root,configLoader:'native'});
+await writeFile(new URL('../dist/_redirects',import.meta.url),netlifyRedirects(backend));
+await writeFile(new URL('../dist/api-unavailable.json',import.meta.url),JSON.stringify({error:'The requested analysis route is unavailable. Please contact support.'}));
+console.log('Netlify build ready with analysis routing.');

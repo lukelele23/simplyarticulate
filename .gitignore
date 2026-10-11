@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env.local
+.env.server.local
+.env.*.local
+.ai-data/
+work/
+.env
+.env.*
+!.env.frontend.example
+!.env.backend.example
+.netlify/
+*.log
