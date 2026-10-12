@@ -11,3 +11,4 @@ work/
 !.env.backend.example
 .netlify/
 *.log
+!.env.supabase.example

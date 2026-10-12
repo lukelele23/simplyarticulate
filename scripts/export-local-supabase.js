@@ -1,0 +1,10 @@
+import fs from 'node:fs';import path from 'node:path';import {randomBytes} from 'node:crypto';import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+for(const name of ['.env.local','.env.server.local'])if(fs.existsSync(path.join(root,name)))process.loadEnvFile(path.join(root,name));
+const directory=path.resolve(root,process.env.AI_DATA_DIR||'.ai-data');
+const read=(name,fallback)=>fs.existsSync(path.join(directory,name))?JSON.parse(fs.readFileSync(path.join(directory,name),'utf8')):fallback;
+const state={counts:read('analysis-counts.json',{days:{}}),seconds:read('usage.json',{}),voting:read('topic-voting.json',{polls:{},challenges:{}}),attempts:read('daily-attempts.json',[]),community:read('community.json',[])};
+const text=JSON.stringify(state);let delimiter;do{delimiter=`$sa_${randomBytes(16).toString('hex')}$`;}while(text.includes(delimiter));
+fs.mkdirSync(path.join(root,'work'),{recursive:true});
+fs.writeFileSync(path.join(root,'work','supabase-local-state.sql'),`-- Private account data. Apply only in your own Supabase project. Do not commit this file.\nselect public.sa_import_local_state(${delimiter}${text}${delimiter}::jsonb);\n`,{mode:0o600});
+console.log('Created work/supabase-local-state.sql. Keep it private and apply it immediately before switching to Supabase.');

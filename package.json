@@ -19,7 +19,9 @@
     "deployment:check": "node scripts/check-deployment.js",
     "deployment:check:online": "node scripts/check-deployment.js --online",
     "deployment:check:backend": "node scripts/check-deployment.js --backend",
-    "start": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.server.local server/index.js"
+    "start": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.server.local server/index.js",
+    "supabase:prepare": "node scripts/prepare-supabase.js",
+    "supabase:export": "node scripts/export-local-supabase.js"
   },
   "dependencies": {
     "@supabase/server": "1.8.1",
@@ -33,7 +35,8 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.3.3",
-    "tailwindcss": "4.3.3"
+    "tailwindcss": "4.3.3",
+    "@electric-sql/pglite": "0.5.8"
   },
   "engines": {
     "node": ">=24 <25"

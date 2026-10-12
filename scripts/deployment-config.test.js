@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {deploymentSettings,netlifyRedirects,validateBackendEnvironment} from './deployment-config.js';
-const env={VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',ANALYSIS_BACKEND_URL:'https://speech.backend.test'};
+const env={VITE_ANALYSIS_SERVICE:'node',VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test',ANALYSIS_BACKEND_URL:'https://speech.backend.test'};
+test('Supabase deployment uses Edge Functions without requiring a separate backend host',()=>{
+ const settings=deploymentSettings({...env,VITE_ANALYSIS_SERVICE:'supabase',ANALYSIS_BACKEND_URL:''});
+ assert.equal(settings.backend,'https://test.supabase.co/functions/v1/speech-api');assert.equal(settings.service,'supabase');
+ assert.match(netlifyRedirects(settings.backend),/functions\/v1\/speech-api\/api\/analysis/);
+});
 test('deploy routing preserves API paths before the SPA fallback',()=>{
  const {backend}=deploymentSettings(env),rules=netlifyRedirects(backend).trim().split('\n');
  assert.deepEqual(rules,['/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!','/* /index.html 200']);

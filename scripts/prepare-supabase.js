@@ -1,0 +1,16 @@
+import fs from 'node:fs';import path from 'node:path';import {randomBytes} from 'node:crypto';import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+for(const name of ['.env.local','.env.server.local'])if(fs.existsSync(path.join(root,name)))process.loadEnvFile(path.join(root,name));
+for(const name of ['ASSEMBLYAI_API_KEY','GEMINI_API_KEY'])if(!process.env[name])throw Error(`Set ${name} in the ignored local server environment file first.`);
+const url=new URL(process.env.SUPABASE_URL||process.env.VITE_SUPABASE_URL||'');
+if(url.protocol!=='https:'||!url.hostname.endsWith('.supabase.co'))throw Error('Use your Supabase project HTTPS URL to prepare activation commands.');
+const secretFile=path.join(root,'.env.supabase.local');let token;
+if(fs.existsSync(secretFile)){const line=fs.readFileSync(secretFile,'utf8').match(/^JOB_WORKER_TOKEN=(.+)$/m)?.[1];if(line)token=line.startsWith('"')?JSON.parse(line):line.trim();}
+token||=randomBytes(32).toString('hex');
+const values={ASSEMBLYAI_API_KEY:process.env.ASSEMBLYAI_API_KEY,GEMINI_API_KEY:process.env.GEMINI_API_KEY,JOB_WORKER_TOKEN:token,SPEECH_ALLOWED_ORIGINS:process.env.SPEECH_ALLOWED_ORIGINS||'https://simplyarticulate.com,https://www.simplyarticulate.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173',ASSEMBLYAI_MODEL:process.env.ASSEMBLYAI_MODEL||'universal-3-5-pro',ASSEMBLYAI_BASE_URL:process.env.ASSEMBLYAI_BASE_URL||'https://api.assemblyai.com',GEMINI_MODEL:process.env.GEMINI_MODEL||'gemini-3.5-flash-lite'};
+fs.writeFileSync(secretFile,Object.entries(values).map(([name,value])=>`${name}=${JSON.stringify(value)}`).join('\n')+'\n',{mode:0o600});
+const literal=value=>`'${value.replaceAll("'","''")}'`;
+const schedule=`-- Contains a private worker token. Keep this file out of source control.\ncreate extension if not exists pg_cron with schema pg_catalog;\ncreate extension if not exists pg_net with schema extensions;\ncreate extension if not exists supabase_vault with schema vault;\ndo $setup$ declare s uuid;begin\nselect id into s from vault.secrets where name='sa_worker_token';if s is null then perform vault.create_secret(${literal(token)},'sa_worker_token');else perform vault.update_secret(s,${literal(token)});end if;\nselect id into s from vault.secrets where name='sa_worker_url';if s is null then perform vault.create_secret(${literal(url.origin+'/functions/v1/speech-worker')},'sa_worker_url');else perform vault.update_secret(s,${literal(url.origin+'/functions/v1/speech-worker')});end if;\nend $setup$;\nselect cron.schedule('sa-speech-worker','* * * * *',$cron$ select net.http_post(url:=(select decrypted_secret from vault.decrypted_secrets where name='sa_worker_url'),headers:=jsonb_build_object('Content-Type','application/json','x-sa-worker-token',(select decrypted_secret from vault.decrypted_secrets where name='sa_worker_token')),body:='{}'::jsonb,timeout_milliseconds:=10000); $cron$);\n`;
+fs.mkdirSync(path.join(root,'work'),{recursive:true});fs.writeFileSync(path.join(root,'work','supabase-worker-schedule.sql'),schedule,{mode:0o600});
+console.log('Prepared .env.supabase.local and work/supabase-worker-schedule.sql. Neither file should be committed.');
+console.log(`Project reference: ${url.hostname.split('.')[0]}`);

@@ -183,7 +183,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           </>}
         </>
       )}
-      <p className="analysis-muted">{user ? 'Your recording stays in this browser until you choose Analyze. Analysis sends audio to AssemblyAI and the transcript to Google Gemini. Factual claims may be checked using Google Search. Recording audio is not saved in your practice history.' : 'Your recording stays on this device. You can replay it and download it. AI analysis and account audio storage require sign-in.'}</p>
+      <p className="analysis-muted">{user ? import.meta.env.VITE_ANALYSIS_SERVICE==='supabase' ? 'Your recording stays in this browser until you choose Analyze. Analysis temporarily stores audio privately in Supabase and sends it to AssemblyAI, then sends the transcript to Google Gemini. Temporary audio is deleted after processing. Factual claims may be checked using Google Search. Recording audio is not saved in your practice history.' : 'Your recording stays in this browser until you choose Analyze. Analysis sends audio to AssemblyAI and the transcript to Google Gemini. Factual claims may be checked using Google Search. Recording audio is not saved in your practice history.' : 'Your recording stays on this device. You can replay it and download it. AI analysis and account audio storage require sign-in.'}</p>
       {config?.demo && <p className="analysis-notice">Demo mode: Analyze displays a sample report. It does not transcribe your recording or contact an AI provider.</p>}
       {user && configLoaded && config?.enabled===false && !configError && <p className="analysis-notice">AI analysis is not configured yet. You can replay your recording and save your practice.</p>}
       {configError && <div><p role="alert" className="analysis-error">{configError}</p><button className="secondary-button" onClick={()=>setAvailabilityAttempt(n=>n+1)}>Check analysis again</button></div>}
@@ -232,3 +232,4 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
     </section>
   );
 }
+

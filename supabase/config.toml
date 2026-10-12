@@ -1,0 +1,13 @@
+project_id = "simplyarticulate"
+
+[functions.speech-api]
+verify_jwt = false
+
+[functions.speech-worker]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[edge_runtime]
+policy = "per_worker"
