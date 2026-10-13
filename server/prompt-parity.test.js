@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {FRAMEWORK_PROMPT as local} from './framework.js';import {FRAMEWORK_PROMPT as edge} from '../supabase/functions/_shared/framework.js';test('Node and cloud coaching prompts stay identical',()=>assert.equal(local,edge));

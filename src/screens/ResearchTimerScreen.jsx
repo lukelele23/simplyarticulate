@@ -26,9 +26,9 @@ export default function ResearchTimerScreen({
   const seconds = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <main className="screen timer-screen">
+    <main tabIndex={-1} id="main-content" className="screen timer-screen">
       <section className="timer-card research-layout">
-        <header className="research-heading">
+        <header className="research-heading"><h1 tabIndex={-1} className="destination-heading">Preparation</h1>
           <p className="eyebrow">{difficulty} DIFFICULTY</p>
           {debateSide && (
             <p className="m-0 text-sm font-semibold uppercase tracking-wider text-[#d0d2d4]">

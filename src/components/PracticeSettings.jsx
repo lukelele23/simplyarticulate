@@ -19,16 +19,17 @@ export default function PracticeSettings({ topicType, settings, onSettingsChange
               id="practice-prep-duration"
               className="practice-duration-range"
               type="range"
-              min={2 * 60}
+              min="0"
               max="300"
               step="15"
               value={settings.researchSeconds}
-              style={{ "--range-progress": `${((settings.researchSeconds - 2 * 60) / (300 - 2 * 60)) * 100}%` }}
+              style={{ "--range-progress": `${(settings.researchSeconds / 300) * 100}%` }}
               aria-label="Preparation time"
+              aria-valuetext={formatDuration(settings.researchSeconds)}
               onChange={(event) => set("researchSeconds", Number(event.target.value))}
             />
             <div className="practice-duration-endpoints" aria-hidden="true">
-              <span>2 min</span>
+              <span>Skip</span>
               <span>5 min</span>
             </div>
           </div>
@@ -48,6 +49,7 @@ export default function PracticeSettings({ topicType, settings, onSettingsChange
             value={settings.speechSeconds}
             style={{ "--range-progress": `${((settings.speechSeconds - 30) / 270) * 100}%` }}
             aria-label="Speaking time"
+            aria-valuetext={formatDuration(settings.speechSeconds)}
             onChange={(event) => set("speechSeconds", Number(event.target.value))}
           />
           <div className="practice-duration-endpoints" aria-hidden="true">
@@ -59,3 +61,5 @@ export default function PracticeSettings({ topicType, settings, onSettingsChange
     </div>
   );
 }
+
+

@@ -43,7 +43,10 @@ export function validateMetadata(value, maxSeconds = 600) {
   if (!['easy', 'medium', 'hard'].includes(value.difficulty)) throw new Error('Invalid difficulty.');
   if (value.consent !== true) throw new Error('Permission to analyze this recording is required.');
   if (value.format === 'daily-challenge' && (!/^\d{4}-\d{2}-\d{2}$/.test(value.challengeId || '') || !/^[A-Za-z0-9_-]{3,24}$/.test(value.publicUsername || ''))) throw new Error('Choose a public username of 3–24 letters, numbers, underscores or hyphens for the daily challenge.');
+  if(value.parentJobId && (!/^[a-f0-9-]{36}$/.test(value.parentJobId)||value.format==='daily-challenge'||durationSeconds>60))throw new Error('Invalid focused retry.');
   return {
+    goal:['explain','persuade','story','interview'].includes(value.goal)?value.goal:'explain',
+    ...(value.parentJobId?{parentJobId:value.parentJobId}:{}),
     ...(value.format === 'daily-challenge' ? {challengeId:value.challengeId,publicUsername:value.publicUsername} : {}),
     topic: value.topic.trim(), format: value.format, difficulty: value.difficulty,
     debateSide: ['for', 'against', 'pro', 'con'].includes(value.debateSide) ? value.debateSide : null,

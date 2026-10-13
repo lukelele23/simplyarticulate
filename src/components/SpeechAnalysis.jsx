@@ -1,4 +1,5 @@
 import { reportText, transcriptSegments } from '../lib/reports.js';
+import SpeechStars from './SpeechStars.jsx';
 import SavedFeedback from './SavedFeedback.jsx';
 import FrameworkFeedback from './FrameworkFeedback.jsx';
 import { useEffect, useRef, useState } from 'react';
@@ -11,7 +12,7 @@ const STATUS_TEXT = {
   moderating: 'Checking your challenge score and community safety…', uploading: 'Preparing your recording…', transcribing: 'Writing down your words…', coaching: 'Preparing your feedback…',
 };
 
-export default function SpeechAnalysis({ recording, metadata, onReportChange, onResult, initialReport = null, onAttemptUsed, user, onSignUp, onRetry }) {
+export default function SpeechAnalysis({ recording, metadata, onReportChange, onResult, initialReport = null, onAttemptUsed, user, onSignUp, onRetry, onScore, onFeedbackPreference, onRemoveSavedFeedback }) {
   const [shareTranscript, setShareTranscript] = useState(false);
   const [published, setPublished] = useState(false);
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
@@ -32,6 +33,8 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
   const mountedRef = useRef(false);
   const busyRef = useRef(false);
   const [usage, setUsage] = useState(null);
+  const [retryEligibility,setRetryEligibility]=useState(null);
+  useEffect(()=>{if(!metadata.parentJobId)return;const request=new AbortController();analysisRequest(`/focused-retry?parent=${encodeURIComponent(metadata.parentJobId)}`,{signal:request.signal}).then(setRetryEligibility).catch(()=>setRetryEligibility({eligible:false}));return()=>request.abort();},[metadata.parentJobId]);
   useEffect(() => {
     if (!user || !config?.enabled || config.demo) return;
     const controller = new AbortController();
@@ -40,7 +43,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
     return()=>{controller.abort();window.removeEventListener('analysis-allowance-changed',refresh);};
   }, [user, config, status, metadata.format]);
   const signInRequired = !user;
-  const allowanceFull = usage && (usage.canAnalyze === false || usage.usedSeconds + usage.reservationSeconds > usage.limitSeconds);
+  const allowanceFull = !retryEligibility?.eligible && usage && (usage.canAnalyze === false || usage.usedSeconds + usage.reservationSeconds > usage.limitSeconds);
   const busy = Boolean(STATUS_TEXT[status]);
 
   useEffect(() => {
@@ -73,6 +76,12 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
 
   useEffect(() => { onResult?.(user ? report : null); }, [report,onResult,user]);
 
+  useEffect(() => {
+    if (user && report && !report.demo && Number.isInteger(report.coaching?.rating?.stars)) {
+      onScore?.({ report: saveReport ? report : null, rating: report.coaching.rating, recording, metadata:{...metadata,nextFocus:report.coaching.nextStep||report.coaching.nextExercise,focusReview:report.coaching.focusReview} });
+    }
+  }, [report, saveReport, user?.id, onScore]);
+
   async function analyze() {
     if (!user || busyRef.current) return;
     busyRef.current = true;
@@ -83,7 +92,8 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
     try {
       const form = new FormData();
       form.append('audio', recording.blob, 'speech-recording');
-      form.append('metadata', JSON.stringify({ ...metadata, durationSeconds: recording.durationSeconds, consent: true }));
+      const requestMetadata={...metadata};if(metadata.parentJobId&&retryEligibility?.eligible===false)delete requestMetadata.parentJobId;
+      form.append('metadata', JSON.stringify({ ...requestMetadata, durationSeconds: recording.durationSeconds, consent: true }));
       let job = await analysisRequest('', { method: 'POST', body: form, signal: controller.signal, requestKey: requestKeyRef.current });
       jobIdRef.current = job.id;
       if (metadata.format === 'daily-challenge' && !config?.demo) onAttemptUsed?.();
@@ -95,7 +105,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
       if (job.status === 'error') throw new Error(job.error);
       // Reuse this take’s key to recover a lost response without another charge.
       if (mountedRef.current) {
-        setReport(job.result);
+        setReport({...job.result,jobId:job.id});
         setStatus('completed');
       }
     } catch (caught) {
@@ -117,13 +127,16 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
 
   async function forget() {
     await cancel();
+    onFeedbackPreference?.(null);
+    onRemoveSavedFeedback?.(recording.draftId||recording.requestKey);
+    if(report?.coaching?.rating)onScore?.({report:null,rating:report.coaching.rating,recording,metadata});
     if (mountedRef.current) { setReport(null); setSaveReport(false); setStatus('idle'); }
   }
 
   async function refreshCoaching() {
     if(busyRef.current || !jobIdRef.current)return;
     busyRef.current=true;setStatus('coaching');setError('');
-    try{const signal=AbortSignal.timeout(Math.max(240000,(config?.jobTimeoutMs||240000)+30000));const job=await awaitRetry(await analysisRequest(`/${jobIdRef.current}/coaching`,{method:'POST',body:{transcript:report.transcript},signal}),signal);if(mountedRef.current)setReport(job.result);}
+    try{const signal=AbortSignal.timeout(Math.max(240000,(config?.jobTimeoutMs||240000)+30000));const job=await awaitRetry(await analysisRequest(`/${jobIdRef.current}/coaching`,{method:'POST',body:{transcript:report.transcript},signal}),signal);if(mountedRef.current)setReport({...job.result,jobId:job.id});}
     catch(cause){if(mountedRef.current)setError(cause.message);}
     finally{busyRef.current=false;if(mountedRef.current)setStatus('completed');}
   }
@@ -183,11 +196,13 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           </>}
         </>
       )}
-      <p className="analysis-muted">{user ? import.meta.env.VITE_ANALYSIS_SERVICE==='supabase' ? 'Your recording stays in this browser until you choose Analyze. Analysis temporarily stores audio privately in Supabase and sends it to AssemblyAI, then sends the transcript to Google Gemini. Temporary audio is deleted after processing. Factual claims may be checked using Google Search. Recording audio is not saved in your practice history.' : 'Your recording stays in this browser until you choose Analyze. Analysis sends audio to AssemblyAI and the transcript to Google Gemini. Factual claims may be checked using Google Search. Recording audio is not saved in your practice history.' : 'Your recording stays on this device. You can replay it and download it. AI analysis and account audio storage require sign-in.'}</p>
+      <p className="analysis-muted">Analyze sends this recording for private transcription and speech coaching.</p>
+      <details className="analysis-disclosure"><summary>How your recording is processed</summary><p>AssemblyAI transcribes the audio; Google Gemini coaches the transcript. Factual claims may be checked with Google Search. {import.meta.env.VITE_ANALYSIS_SERVICE==='supabase'?'Audio is stored temporarily in private Supabase storage and deleted after processing.':'The analysis server processes audio temporarily and requests provider cleanup.'} Scores save to Progress. Full transcripts and coaching sync only when you choose to keep them. Audio requires a separate save. Public challenge sharing is always optional.</p></details>
       {config?.demo && <p className="analysis-notice">Demo mode: Analyze displays a sample report. It does not transcribe your recording or contact an AI provider.</p>}
       {user && configLoaded && config?.enabled===false && !configError && <p className="analysis-notice">AI analysis is not configured yet. You can replay your recording and save your practice.</p>}
       {configError && <div><p role="alert" className="analysis-error">{configError}</p><button className="secondary-button" onClick={()=>setAvailabilityAttempt(n=>n+1)}>Check analysis again</button></div>}
       {signInRequired && <div className="analysis-notice"><p>Record, replay and download on this device. Sign in for one practice analysis and one daily-challenge analysis each day.</p><button className="secondary-button" onClick={onSignUp}>Create account or sign in</button></div>}
+      {metadata.parentJobId && <p className="analysis-notice">{retryEligibility?.eligible?'One focused retry assessment is available for this take (up to 60 seconds).':retryEligibility===null?'Checking focused retry eligibility…':'A focused assessment is unavailable. You can compare these takes by listening; ordinary analysis requires an available daily allowance.'}</p>}
       {usage && <p className="analysis-muted">{allowanceFull ? usage.paid ? 'Analysis is temporarily unavailable. Your recording is still available.' : 'Today’s analysis allowance for this section is used. Your recording is still available.' : usage.paid ? 'AI analysis is available with your subscription.' : `${usage.analysesRemaining} ${usage.category === 'challenge' ? 'daily-challenge' : 'practice'} analysis remaining today. Your practice and daily-challenge allowances are separate.`} Allowance resets at midnight UTC.</p>}
       {user && <div className="analysis-actions">
         <button type="button" className="primary-button" disabled={busy || !config?.enabled || signInRequired || (allowanceFull && !report && status!=='error' && !recording.recovery)} onClick={analyze}>
@@ -198,23 +213,25 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
       {busy && <p role="status" aria-live="polite">{STATUS_TEXT[status]} This can take a little while.</p>}
       {error && <p role="alert" className="analysis-error">{error}</p>}
       {user && report && <>
+        <div className="save-status" role="status">Score and practice focus: {report.demo?'sample only':report.coaching?.rating?'saved to Progress on this device; account sync runs in the background':'not available yet'} · Transcript and coaching: {saveReport?'kept with progress':'not kept with progress'}</div>
         {metadata.format==='daily-challenge' && !report.demo && <section className="community-review">
-          <h3>Your challenge score</h3>
-          {report.communityReview?.dimensions && <><p className="challenge-score">{report.communityReview.score}<span> / 100</span></p><p className="analysis-muted">AI rating of this take: relevance, organization, support and clarity. Scores can vary and do not measure your overall ability.</p><dl>{report.communityReview.dimensions.map(d=><div key={d.name}><dt>{d.name} · {d.score}/25</dt><dd>{d.reason}</dd></div>)}</dl></>}
+          <h3>Leaderboard score</h3>
+          {report.communityReview?.dimensions && <><p className="challenge-score">{report.communityReview.score}<span> / 100</span></p><p className="analysis-muted">Leaderboard score: relevance, organization, support and clarity. This uses a different rubric from your coach rating. Scores can vary and do not measure your overall ability.</p><dl>{report.communityReview.dimensions.map(d=><div key={d.name}><dt>{d.name} · {d.score}/25</dt><dd>{d.reason}</dd></div>)}</dl></>}
           <p>{report.communityReview?.eligible ? 'This take passed community review.' : report.communityReview?.reason || 'Community review is unavailable; this take stays private.'}</p>
           {!published && report.communityReview?.eligible && <><p>Your public username: <strong>{metadata.publicUsername}</strong>. Joining publishes your username and score to everyone using the site.</p><label className="analysis-consent"><input type="checkbox" checked={shareTranscript} onChange={e=>setShareTranscript(e.target.checked)}/>Also let other users read my original transcript.</label><button className="primary-button" disabled={busy} onClick={publishChallenge}>Join today’s leaderboard</button><p className="analysis-muted">One scored attempt per account per UTC day; an eligible score can be entered on the leaderboard once. Audio and private practice details are never shared.</p></>}
           {report.communityReview?.retryable && <button className="secondary-button" disabled={busy} onClick={retryReview}>Retry community review</button>}
           {published && <><p role="status">Your entry is on today’s leaderboard.{shareTranscript?' Your transcript is also shared.':' Your transcript stays private.'}</p><button className="text-button" onClick={withdrawEntry} disabled={busy}>Withdraw my public entry</button></>}
         </section>}
         {report.demo && <p className="analysis-notice"><strong>Sample report — these are not your spoken words.</strong></p>}
-        <div className="analysis-metrics">
+        {report.coaching && <section className="feedback-outcome"><h3>Your coaching outcome</h3><p>{report.coaching.summary}</p><p><strong>What worked:</strong> {report.coaching.strength?.observation}</p><p><strong>Focus next:</strong> {report.coaching.nextStep || report.coaching.nextExercise}</p><p>Coach rating: {report.coaching.rating?.stars ?? '—'}/10</p>{report.coaching.focusReview && <p><strong>Your practiced improvement:</strong> {report.coaching.focusReview.assessment}</p>}</section>}
+        <details><summary>Recording measurements</summary><div className="analysis-metrics">
           <div><strong>{report.metrics.wordCount}</strong><span>Words</span></div>
           <div><strong>{report.metrics.wordsPerMinute}</strong><span>Words per minute</span></div>
           <div><strong>{report.metrics.fillerCount}</strong><span>Detected fillers</span></div>
           <div><strong>{report.metrics.estimatedPauses.length}</strong><span>Estimated long pauses</span></div>
         </div>
-        <p className="analysis-muted">Pace uses the full analyzed recording duration. Pause estimates use gaps of at least 1.5 seconds between recognized words. These are practice indicators, not an overall ability score.</p>
-        <details open className="analysis-transcript">
+        <p className="analysis-muted">Pace uses the full analyzed recording duration. Pause estimates use gaps of at least 1.5 seconds between recognized words. These are practice indicators, not an overall ability score.</p></details>
+        <details className="analysis-transcript">
           <summary>Original transcript</summary>
           {!report.demo && transcriptSegments(report).length ? <div className="transcript-segments">{transcriptSegments(report).map((segment,i,segments)=><div key={i}><button className="transcript-seek" aria-label={`Play sentence at ${Math.floor(segment.startSeconds)} seconds`} aria-current={currentTime>=segment.startSeconds && currentTime<(segments[i+1]?.startSeconds ?? Infinity)?'true':undefined} onClick={()=>{if(playerRef.current){playerRef.current.currentTime=segment.startSeconds;void playerRef.current.play().catch(()=>setPlaybackError('Press play to hear this moment.'));}}}>{Math.floor(segment.startSeconds/60)}:{String(Math.floor(segment.startSeconds%60)).padStart(2,'0')} · {segment.text}</button><div className="filler-seeks">{segment.words.filter(w=>/^(um+|uh+|erm|er|hmm)[,.!?]?$/i.test(w.text)).map((w,j)=><button className="text-button" key={j} onClick={()=>{if(playerRef.current){playerRef.current.currentTime=w.start/1000;void playerRef.current.play().catch(()=>{});}}}>Hear “{w.text}”</button>)}</div></div>)}</div> : <p>{report.transcript}</p>}
         </details>
@@ -222,10 +239,12 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
         {report.coachingError && jobIdRef.current && !report.demo && <button className="secondary-button" disabled={busy} onClick={refreshCoaching}>Retry coaching on this transcript</button>}
         {report.cleanupWarning && <p role="alert" className="analysis-error">{report.cleanupWarning}</p>}
         {report.coaching?.argumentLogic ? <FrameworkFeedback coaching={report.coaching} onRetry={onRetry} busy={busy} /> : report.coaching && <><SavedFeedback report={report}/>{onRetry && <button className="primary-button" disabled={busy} onClick={()=>onRetry(report.coaching.improvements?.[0] || report.coaching.nextExercise)}>Practice this improvement</button>}</>}
-        {!report.demo && <label className="analysis-consent"><input type="checkbox" checked={saveReport} onChange={(event) => setSaveReport(event.target.checked)} />Keep this transcript and feedback with my progress. It will sync to my private account when available.</label>}
+        <SpeechStars key={report.jobId||recording.draftId} resultId={report.jobId||recording.draftId} rating={report.coaching?.rating} animate />
+        {!report.demo && <label className="analysis-consent"><input type="checkbox" checked={saveReport} onChange={(event) => {setSaveReport(event.target.checked);onFeedbackPreference?.(event.target.checked?report:null);}} />Keep transcript and coaching in my account. It will sync to my private account when available.</label>}
+        <p className="analysis-muted">Removing this report deletes this take’s saved transcript and coaching, including its local recovery report. Your score and audio remain. Public challenge transcripts require separate withdrawal.</p>
         <div className="analysis-actions">
           <button type="button" className="secondary-button" disabled={busy} onClick={downloadReport}>Download feedback</button>
-          <button type="button" className="secondary-button" disabled={busy} onClick={forget}>Remove this report</button>
+          <button type="button" className="secondary-button" disabled={busy} onClick={forget}>Remove report from this take and saved feedback</button>
         </div>
       </>}
       {user && <p className="analysis-muted">Coaching assesses your words and measured timing. Pronunciation and intonation assessment are not included.</p>}

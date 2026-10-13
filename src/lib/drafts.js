@@ -32,3 +32,5 @@ export async function updateDraft(id, changes) {
   });
 }
 export async function removeDraft(id) { await transaction('readwrite', store => store.delete(id)); }
+
+export async function removeAccountDrafts(owner){const drafts=await listDrafts(owner);for(const draft of drafts)await removeDraft(draft.id);}

@@ -22,6 +22,9 @@ function getStoredUsername(user) {
 }
 
 export default function DailyChallengeScreen({
+  onRemoveSavedFeedback,
+  onScore,
+  goal,
   onSave,
   sessions = [],
   recoveredTake,
@@ -390,7 +393,7 @@ export default function DailyChallengeScreen({
                   recording={recording}
                   key={recording.draftId}
                   initialReport={isRecovered ? recoveredTake?.report : null}
-                  metadata={{ topic: challenge.topic, format: "daily-challenge", difficulty: "medium", challengeId: challenge.id, publicUsername:isRecovered ? recoveredTake.publicUsername : publicUsername }}
+                  metadata={{ topic: challenge.topic, format: "daily-challenge", difficulty: "medium", goal, challengeId: challenge.id, publicUsername:isRecovered ? recoveredTake.publicUsername : publicUsername }}
                   user={user}
                   onSignUp={onSignUp}
                   onRetry={() => {
@@ -398,6 +401,8 @@ export default function DailyChallengeScreen({
                     setChallengeStarted(true);
                   }}
                   onAttemptUsed={() => setAttemptCheck(check=>check+1)}
+                  onRemoveSavedFeedback={onRemoveSavedFeedback}
+                  onScore={onScore}
                   onReportChange={setAnalysis}
                 />
               </Suspense>

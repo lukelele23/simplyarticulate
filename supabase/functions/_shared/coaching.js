@@ -57,7 +57,7 @@ export async function generateCoaching(transcript, metadata, metrics, config, si
         contents: [{ role: 'user', parts: [{ text: JSON.stringify({ practice: metadata, transcript, metrics, verification, disfluenciesPreserved: true }) }] }],
         generationConfig: {
           responseMimeType: 'application/json', responseSchema: FRAMEWORK_SCHEMA,
-          temperature: 0.2, maxOutputTokens: 8000,
+          temperature: 0.2, maxOutputTokens: metadata.parentJobId ? 2500 : 4000,
           // Gemini 3.x rejects the legacy zero thinkingBudget used by 2.5 Flash-Lite.
           ...(config.geminiModel.startsWith('gemini-2.5-flash') ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
         },
@@ -66,7 +66,7 @@ export async function generateCoaching(transcript, metadata, metrics, config, si
   );
   const text = response.candidates?.[0]?.content?.parts?.filter((part) => !part.thought).map((part) => part.text || '').join('');
   if (!text) throw new Error('No coaching was returned.');
-  return { ...validateFramework(JSON.parse(text), transcript, verification.sources, metrics.wordCount), groundingMetadata: verification.groundingMetadata };
+  return { ...validateFramework(JSON.parse(text), transcript, verification.sources, metrics.wordCount, metadata), groundingMetadata: verification.groundingMetadata };
 }
 
 export function logCoachingFailure(error, model) {

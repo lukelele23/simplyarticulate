@@ -204,7 +204,7 @@ const SpeechRecorder = forwardRef(function SpeechRecorder(
     <section className="speech-recorder" aria-label="Speech recording">
       <MicrophoneCheck disabled={busy}/>
       <p className="recording-status" role="status">
-        {status === "recording" ? `Microphone recording · ${elapsed}s` : status === "paused" ? `Recording paused · ${elapsed}s` : status === "requesting" ? "Waiting for microphone permission…" : status === "stopping" ? "Finishing recording…" : clip ? `Recording ready · ${clip.seconds}s` : "Microphone ready · starts with the speech timer"}
+        {status === "recording" ? `Microphone recording · ${elapsed}s` : status === "paused" ? `Recording paused · ${elapsed}s` : status === "requesting" ? "Waiting for microphone permission…" : status === "stopping" ? "Finishing recording…" : clip ? `Recording ready · ${clip.seconds}s` : "Microphone not checked · permission is requested when you start"}
       </p>
       {showPlayback && url && !busy && <audio className="recording-player" controls controlsList="nodownload" src={url}>Your browser does not support audio playback.</audio>}
       {clip && <p className="screen-message">This take is kept locally for recovery. Finish and review your speech to download audio or save it to your account.</p>}

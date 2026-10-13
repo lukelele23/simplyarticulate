@@ -1,0 +1,112 @@
+/* Shared visual rules: intentional neutral actions, semantic danger, stable motion. */
+:root {
+ --ui-canvas:#121820; --ui-surface:#262729; --ui-raised:#303234;
+ --ui-border:#51555a; --ui-text:#f3f5f7; --ui-muted:#bdc2c8;
+ --ui-action:#c7c9cb; --ui-action-hover:#dedfe0; --ui-action-text:#202224;
+ --ui-danger:#f0a3a9; --ui-danger-surface:#37272b; --ui-radius:14px;
+}
+#root h1[tabindex="-1"]:focus,#root h2[tabindex="-1"]:focus,#root main[tabindex="-1"]:focus{outline:none;}
+#root :is(.primary-button,.start-button,.welcome-demo-button,.welcome-account-button,.secondary-button,.practice-settings-toggle){
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;
+ padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;line-height:1.4;
+ box-shadow:none;filter:none;transform:none;transition:background-color .16s ease,border-color .16s ease,color .16s ease;
+}
+#root :is(.primary-button,.start-button,.welcome-demo-button,.welcome-account-button){
+ border:1px solid var(--ui-action);background:var(--ui-action);color:var(--ui-action-text);
+}
+#root :is(.primary-button,.start-button,.welcome-demo-button,.welcome-account-button):hover:not(:disabled){
+ background:var(--ui-action-hover);border-color:var(--ui-action-hover);box-shadow:none;filter:none;transform:none;
+}
+#root :is(.secondary-button,.practice-settings-toggle){border:1px solid var(--ui-border);background:var(--ui-surface);color:var(--ui-text);}
+#root :is(.secondary-button,.practice-settings-toggle):hover:not(:disabled){background:var(--ui-raised);border-color:#7a7f85;box-shadow:none;transform:none;}
+#root button:disabled{opacity:.6;cursor:not-allowed;box-shadow:none;filter:none;transform:none;}
+#root :is(button,a,input,select,textarea,summary):focus-visible{outline:2px solid var(--ui-action);outline-offset:3px;}
+#root .text-button{display:inline-flex;align-items:center;min-height:44px;padding:8px 2px;color:var(--ui-muted);font-size:14px;line-height:1.4;}
+#root .text-button:hover:not(:disabled){color:var(--ui-text);text-decoration:underline;text-underline-offset:4px;background:transparent;transform:none;}
+#root .app-nav :is(.nav-account,.nav-survey){min-height:44px;padding:9px 12px;font-size:12px;}
+#root .app-nav .nav-survey{max-width:170px;}
+#root .practice-settings-toggle{white-space:nowrap;flex-shrink:0;font-size:13px;padding-inline:12px;}
+#root :is(.skill-options button,.debate-format-switch button,.debate-prep-sides button){min-height:44px;padding:10px 14px;font-size:14px;line-height:1.4;}
+#root .skill-options button[aria-pressed="true"]{background:var(--ui-action);border-color:var(--ui-action);color:var(--ui-action-text);}
+#root .danger-button{background:var(--ui-danger-surface);border-color:var(--ui-danger);color:#ffdce0;}
+#root .danger-button:hover:not(:disabled){background:#4a2b32;border-color:#ffbdc4;color:#fff;}
+#root .danger-button:focus-visible{outline-color:var(--ui-danger);}
+#root .danger-button-solid{background:#8c303d;border-color:#bb5362;color:#fff;}
+#root .danger-button-solid:hover:not(:disabled){background:#a23746;}
+#root .settings-card{border-radius:var(--ui-radius);box-shadow:none;}
+#root .settings-card :is(p,label){line-height:1.6;}
+#root .settings-card label{display:flex;align-items:flex-start;gap:10px;}
+#root .settings-card label:has(input:not([type="checkbox"])){display:grid;gap:8px;}
+#root .settings-card input:not([type="checkbox"]){width:100%;min-height:44px;box-sizing:border-box;border:1px solid var(--ui-border);border-radius:10px;padding:10px 12px;background:#202224;color:var(--ui-text);font:inherit;}
+#root .settings-card input[type="checkbox"]{flex:0 0 auto;width:18px;height:18px;margin:4px 0 0;accent-color:var(--ui-action);}
+#root .settings-card p{margin-block:0;}
+#root .settings-card :is(h1,h2,h3){margin-block:0;}
+#root :is(.analysis-panel,.save-audio,.take-comparison,.learning-progress){background:var(--ui-surface);border-color:var(--ui-border);border-radius:var(--ui-radius);}
+#root :is(.analysis-muted,.analysis-metrics span,.save-audio p,.take-comparison p){color:var(--ui-muted);}
+#root .analysis-notice{background:var(--ui-raised);border-color:var(--ui-border);color:var(--ui-text);}
+#root .feedback-outcome{display:grid;gap:12px;padding:18px;border:1px solid #74797f;border-radius:12px;background:var(--ui-raised);}
+#root .analysis-disclosure{padding:12px 14px;border:1px solid var(--ui-border);border-radius:10px;}
+#root .analysis-disclosure summary{min-height:24px;line-height:1.5;}
+#root .analysis-disclosure[open] p{margin-top:12px;}
+#root .learning-progress{display:grid;gap:12px;}
+#root .learning-progress :is(h2,h3,p){margin:0;}
+#root .learning-progress small{color:var(--ui-muted);line-height:1.5;}
+#root .analysis-coaching :is(ul,ol){margin:0;padding-left:22px;}
+#root .analysis-coaching li+li{margin-top:10px;}
+#root .subscription-survey{max-height:calc(100dvh - 32px);overflow-y:auto;border-color:var(--ui-border);border-radius:var(--ui-radius);background:var(--ui-surface);}
+#root .survey-close{display:grid;place-items:center;min-width:44px;min-height:44px;flex-shrink:0;border:1px solid var(--ui-border);border-radius:10px;background:transparent;color:var(--ui-text);line-height:1;}
+#root .survey-close:hover{background:var(--ui-raised);}
+#root .survey-heading{align-items:center;}
+#root .survey-answer{min-height:48px;}
+#root .topic-actions{display:flex;align-items:stretch;gap:10px;margin-top:12px;}
+#root .topic-actions>.primary-button{flex:1;}
+#root .topic-actions>.secondary-button{flex:0 0 auto;}
+#root .topic-display-viewport{--topic-height:196px;height:auto;min-height:var(--topic-height);border:1px solid var(--ui-border);border-radius:var(--ui-radius);background:#23282f;mask-image:none;}
+#root .topic-display-viewport.is-shuffling{height:calc(var(--topic-height) + 2px);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);}
+#root :is(.topic-result-card,.topic-empty-state){height:auto;min-height:var(--topic-height);padding:24px;overflow:visible;justify-content:center;line-height:1.55;font-size:clamp(17px,2vw,22px);}
+#root .topic-reel-item{height:var(--topic-height);padding:24px;overflow:hidden;font-size:clamp(17px,2vw,22px);}
+#root .topic-result-card>span:last-child{min-width:0;max-width:100%;overflow-wrap:anywhere;text-wrap:pretty;}
+#root .topic-selection-status{height:auto;min-height:20px;margin:12px 0 0;}
+#root .topic-result-card:focus{outline:none;}
+#root .prompt-workspace>.text-button{margin-top:12px;}
+#root .speech-rating{min-width:0;}
+#root .speech-stars{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;max-width:360px;font-size:clamp(16px,5vw,28px);text-align:center;}
+#root .speech-stars>span{display:block;line-height:1.3;}
+#root .speech-ring{max-width:100%;}
+#root .welcome-account-button.splash-google{background:#f3f5f7;color:#202224;border-color:#f3f5f7;}
+@media(max-width:540px){
+ #root .topic-actions{flex-direction:column;}
+ #root .topic-actions>button{width:100%;}
+ #root .topic-display-viewport{--topic-height:180px;}
+ #root :is(.topic-result-card,.topic-empty-state,.topic-reel-item){padding:20px;}
+ #root .app-nav :is(.nav-account,.nav-survey){padding:8px;font-size:11px;}
+ #root .app-nav .nav-survey{max-width:100px;}
+ #root .destination-heading{font-size:30px;line-height:1.15;margin:22px 0 18px;}
+}
+@media(prefers-reduced-motion:reduce){#root *,#root *::before,#root *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
+
+#root .survey-short-label{display:none;}
+@media(max-width:540px){#root .survey-full-label{display:none;}#root .survey-short-label{display:inline;}}
+@media(max-width:380px){#root .app-nav{column-gap:8px;}#root .wordmark{font-size:22px;}}
+
+/* Focus the workspace without changing the existing color palette. */
+#root .practice-settings-summary{min-width:0;}
+#root .practice-settings-summary h2{margin:0;}
+#root .practice-settings-summary p{margin:6px 0 0;font-size:13px;line-height:1.5;color:inherit;opacity:.75;}
+#root .practice-grid>.prompt-workspace{padding:20px 0 0;border:0;border-radius:0;background:transparent;box-shadow:none;}
+#root .prompt-workspace>h2{text-align:left;font-family:inherit;font-size:20px;font-weight:600;margin:0 auto 14px;max-width:760px;}
+#root .prompt-workspace>.text-button{display:flex;margin:12px auto 0;}
+#root .practice-settings-heading{gap:16px;}
+@media(min-width:1000px){
+ #root .practice-grid.is-settings-open{grid-template-columns:minmax(250px,300px) minmax(0,1fr);gap:28px;}
+ #root .is-settings-open .practice-settings-heading{align-items:flex-start;flex-direction:column;gap:12px;}
+ #root .is-settings-open .practice-settings-content,#root .is-settings-open .practice-choice-groups,#root .is-settings-open .duration-groups{display:grid;grid-template-columns:minmax(0,1fr);}
+ #root .is-settings-open>.prompt-workspace{padding-top:0;}
+}
+@media(max-width:540px){
+ #root .practice-settings-heading{align-items:flex-start;}
+ #root .practice-grid>.practice-setup{padding:14px;}
+ #root .practice-settings-heading h2{font-size:14px;}
+ #root .practice-settings-summary p{font-size:12px;}
+ #root .practice-settings-toggle{padding-inline:10px;}
+}

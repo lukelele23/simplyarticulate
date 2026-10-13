@@ -1,3 +1,4 @@
+import {isAllowedOrigin} from './origins.js';
 import {rpc,row,publicJob,safeError} from './database.js';
 import {validateMetadata} from './metrics.js';
 import {runStage,providerConfig} from './processor.js';
@@ -11,7 +12,7 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
  async function json(request,max=2048){const text=await limited(request,max);try{return JSON.parse(new TextDecoder().decode(text));}catch{throw Error('SA400:Invalid request.');}}
  return async request=>{
   const origin=request.headers.get('origin');
-  const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin',...(origin&&allowed.has(origin)?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,idempotency-key','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS'}:{})};
+  const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin',...(origin&&isAllowedOrigin(origin,allowed,env.get('SPEECH_ENABLE_LOCAL_DEV')==='true')?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info,idempotency-key','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS'}:{})};
   const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers});
   try{
    if(origin&&!allowed.has(origin))return reply({error:'This website origin is not allowed.'},403);
@@ -20,7 +21,7 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
    const today=new Date().toISOString().slice(0,10),method=request.method;
    if(method==='GET'&&path==='/api/analysis/config')return reply({enabled:enabled(),demo:false,requiresSignIn:true,maxSeconds:300,maxUploadBytes:12582912,jobTimeoutMs:1800000});
    if(method==='GET'&&path==='/api/analysis/health'){
-    const state=await rpc(db,'sa_health');const ready=enabled()&&state?.scheduler===true;return reply({ready},ready?200:503);
+    const state=await rpc(db,'sa_health');const ready=enabled()&&['scheduler','progress','focusedRetry','survey','deletion','recordings'].every(key=>state?.[key]===true);return reply({ready,features:state},ready?200:503);
    }
    if(method==='GET'&&path==='/api/analysis/challenge')return reply(await rpc(db,'sa_challenge'));
    if(method==='GET'&&path==='/api/analysis/topic-vote/results')return reply(await rpc(db,'sa_poll'));
@@ -33,9 +34,10 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
     if(method==='GET')return reply(await rpc(db,'sa_poll',{p_user:owner}));
     if(method==='POST'){const body=await json(request);if(typeof body?.choiceId!=='string')throw Error('SA400:Choose a listed topic.');return reply(await rpc(db,'sa_vote',{p_user:owner,p_day:day(body?.targetDay||''),p_choice:body.choiceId}));}
    }
+   if(method==='GET'&&path==='/api/analysis/focused-retry'){const parent=url.searchParams.get('parent');if(!/^[a-f0-9-]{36}$/.test(parent||''))return reply({eligible:false,maxSeconds:60});return reply(await rpc(db,'sa_focused_retry_status',{p_user:owner,p_parent:parent}));}
    if(path==='/api/analysis/subscription-survey'){
     if(method==='GET')return reply(await rpc(db,'sa_survey',{p_user:owner}));
-    if(method==='POST'){const body=await json(request);if(!['yes','maybe','no'].includes(body?.answer))throw Error('SA400:Choose a survey answer.');return reply(await rpc(db,'sa_survey',{p_user:owner,p_answer:body.answer}));}
+    if(method==='POST'){const body=await json(request);if(body?.goal)return reply(await rpc(db,'sa_complete_survey',{p_user:owner,p_goal:body.goal}));if(!['yes','maybe','no'].includes(body?.answer))throw Error('SA400:Choose a survey answer.');return reply(await rpc(db,'sa_survey',{p_user:owner,p_answer:body.answer}));}
    }
    if(method==='GET'&&path==='/api/analysis/community/attempt'){
     const d=day(url.searchParams.get('day')||today),{data,error}=await db.from('sa_daily_attempts').select('state').eq('user_id',owner).eq('day',d).maybeSingle();if(error)throw error;return reply({day:d,used:Boolean(data),recoverable:data?.state==='failed',state:data?.state||'available'});
@@ -55,6 +57,7 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
     let metadata;try{metadata=validateMetadata(JSON.parse(raw),300);}catch{throw Error('SA400:Check the practice details, recording duration, and analysis consent.');}
     const file=form.get('audio'),types=new Set(['audio/webm','audio/mp4','audio/ogg','audio/wav','audio/x-wav','video/webm']);
     if(!file||typeof file.arrayBuffer!=='function'||file.size<64||file.size>12582912||!types.has(file.type.split(';')[0]))throw Error('SA400:Use a nonempty WebM, MP4, Ogg, or WAV recording within the upload limit.');
+    if(metadata.parentJobId&&!request.headers.get('idempotency-key'))throw Error('SA400:A stable request key is required for a focused retry.');
     const key=request.headers.get('idempotency-key')||crypto.randomUUID();if(!/^[A-Za-z0-9-]{10,100}$/.test(key))throw Error('SA400:Invalid request key.');
     const audio=new Uint8Array(await file.arrayBuffer()),details=new TextEncoder().encode(JSON.stringify(metadata)),joined=new Uint8Array(audio.length+details.length);joined.set(audio);joined.set(details,audio.length);
     const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',joined)),byte=>byte.toString(16).padStart(2,'0')).join('');

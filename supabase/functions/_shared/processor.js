@@ -35,7 +35,7 @@ export async function runStage(db,env,id=null,fetchImpl=fetch){
    const upload=await provider(`${config.assemblyBase}/v2/upload`,{method:'POST',headers:{authorization:config.assemblyKey,'Content-Type':'application/octet-stream'},body:await data.arrayBuffer()},signal,fetchImpl);
    if(typeof upload.upload_url!=='string'||!upload.upload_url.startsWith('https://'))throw Error('Invalid upload response.');job.upload_url=upload.upload_url;await save('submit','transcribing');
   }else if(job.stage==='submit'){
-   const submitted=await provider(`${config.assemblyBase}/v2/transcript`,{method:'POST',headers:{authorization:config.assemblyKey,'Content-Type':'application/json'},body:JSON.stringify({audio_url:job.upload_url,speech_models:[config.assemblyModel],language_code:'en',disfluencies:true,punctuate:true,format_text:false,audio_end_at:300000})},signal,fetchImpl);
+   const submitted=await provider(`${config.assemblyBase}/v2/transcript`,{method:'POST',headers:{authorization:config.assemblyKey,'Content-Type':'application/json'},body:JSON.stringify({audio_url:job.upload_url,speech_models:[config.assemblyModel],language_code:'en',disfluencies:true,punctuate:true,format_text:false,audio_end_at:job.metadata.parentJobId?60000:300000})},signal,fetchImpl);
    if(typeof submitted.id!=='string'||!/^[A-Za-z0-9-]+$/.test(submitted.id))throw Error('Invalid transcript response.');job.provider_id=submitted.id;await save('transcribe','transcribing',{},3);
   }else if(job.stage==='transcribe'){
    const transcript=await provider(`${config.assemblyBase}/v2/transcript/${encodeURIComponent(job.provider_id)}`,{method:'GET',headers:{authorization:config.assemblyKey}},signal,fetchImpl);
@@ -43,7 +43,7 @@ export async function runStage(db,env,id=null,fetchImpl=fetch){
    if(transcript.status!=='completed'){await save('transcribe','transcribing',{},5);return true;}
    const text=transcript.text?.trim(),duration=Number(transcript.audio_duration);
    if(!text||!Array.isArray(transcript.words)||!transcript.words.length)throw Error('No speech was detected. Try recording again in a quieter place.');
-   if(text.length>30000||!Number.isFinite(duration)||duration<=0||duration>302||(job.metadata.format==='daily-challenge'&&duration>62))throw Error('Invalid recording duration.');
+   if(text.length>30000||!Number.isFinite(duration)||duration<=0||duration>(job.metadata.parentJobId?62:302)||(job.metadata.format==='daily-challenge'&&duration>62))throw Error('Invalid recording duration.');
    await rpc(db,'sa_store_transcript',{p_id:job.id,p_lease:job.lease_token,p_seconds:Math.ceil(duration),p_result:{transcript:text,words:transcript.words.map(({text,start,end})=>({text,start,end})),metrics:measureSpeech(transcript.words,duration),coaching:null,coachingError:null,demo:false}});
   }else if(job.stage==='verify'){
    const verification=await verifyClaims(result.transcript,config,signal,fetchImpl);await save('coach','coaching',{verification});

@@ -104,7 +104,7 @@ export function topicVoting(config,fetchImpl=fetch,now=Date.now) {
     return {...choice,votes,percentage:poll.votes.length?Math.round(votes/poll.votes.length*1000)/10:0};
    })};
  }
- return {challenge,async results(){
+ return {purge(owner){const polls=Object.fromEntries(Object.entries(data.polls).map(([day,poll])=>[day,{...poll,votes:poll.votes.filter(v=>v.owner!==owner)}]));commit({...data,polls});},challenge,async results(){
   const {eligible,myVote,...results}=snapshot(await ensurePoll(),null);
   return results;
  },async ballot(owner){return snapshot(await ensurePoll(),owner);},async vote(owner,targetDay,choiceId){

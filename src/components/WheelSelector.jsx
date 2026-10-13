@@ -10,10 +10,9 @@ export default function WheelSelector({
   previousTopic,
   onSelectTopic,
   onContinueToResearch,
-  showFavorite,
-  isFavorite,
-  onToggleFavorite,
 }) {
+  const viewportRef=useRef(null);
+  const [shuffleHeight,setShuffleHeight]=useState(196);
   const [databaseTopics, setDatabaseTopics] = useState([]);
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
   const [topicsError, setTopicsError] = useState("");
@@ -44,12 +43,12 @@ export default function WheelSelector({
     setShuffleDuration(0);
     setCurrentIndex(0);
     setShuffleSequence([]);
-    setSelectedTopic(null);
+    setSelectedTopic(previousTopic || null);
     setDebateSide(null);
     setIsShuffling(false);
     setDatabaseTopics([]);
 
-    if (onSelectTopic) onSelectTopic(null);
+
 
     async function loadTopics() {
       setIsLoadingTopics(true);
@@ -123,6 +122,7 @@ export default function WheelSelector({
   function startShuffle() {
     if (isShuffling || !topics.length) return;
     cancelShuffle();
+    setShuffleHeight(viewportRef.current?.clientHeight||196);
     setDebateSide(null);
     onSelectTopic?.(null);
     const prompts = [...new Set(topics.map(t => t.prompt))];
@@ -146,7 +146,7 @@ export default function WheelSelector({
   }
   return (
     <section className="topic-generator" aria-busy={isShuffling || (isLoadingTopics && !topics.length)}>
-      <div className={`topic-display-viewport${isShuffling ? ' is-shuffling' : ''}`}>
+      <div ref={viewportRef} className={`topic-display-viewport${isShuffling ? ' is-shuffling' : ''}`} style={isShuffling?{'--topic-height':shuffleHeight+'px'}:undefined}>
         {isShuffling ? <div className="topic-reel-track" aria-hidden="true" style={{transform:`translateY(calc(-${currentIndex} * var(--topic-height)))`,transitionDuration:`${shuffleDuration}ms`}}>
           {shuffleSequence.map((prompt,index)=><div className="topic-reel-item" key={index}><span className="topic-result-label">Your topic</span><span>{prompt}</span></div>)}
         </div> : <div className={selectedTopic ? 'topic-result-card' : 'topic-empty-state'} ref={selectedTopicRef} tabIndex={selectedTopic ? -1 : undefined} aria-label={selectedTopic ? `Selected topic: ${selectedTopic}` : undefined}>
@@ -156,7 +156,7 @@ export default function WheelSelector({
       </div>
       <p className="topic-selection-status" role="status" aria-live="polite">{isShuffling ? 'Finding your next topic…' : selectedTopic ? 'Ready when you are.' : 'Choose a prompt to begin.'}</p>
       {topicType === 'debate' && <fieldset className="topic-side-control"><legend>Choose your side</legend><div className="skill-options">{['affirmative','negative'].map(side=><button key={side} aria-pressed={debateSide===side} disabled={!selectedTopic || isShuffling} onClick={()=>setDebateSide(side)}>{side[0].toUpperCase()+side.slice(1)}</button>)}</div></fieldset>}
-      <TopicActions onContinue={()=>onContinueToResearch(debateSide)} onGenerate={startShuffle} onReroll={startShuffle} hasTopic={Boolean(selectedTopic)} canGenerate={Boolean(topics.length)} isShuffling={isShuffling} canContinue={topicType!=='debate' || debateSide!==null} showFavorite={showFavorite} isFavorite={isFavorite} onToggleFavorite={onToggleFavorite}/>
+      <TopicActions onContinue={()=>onContinueToResearch(debateSide)} onGenerate={startShuffle} onReroll={startShuffle} hasTopic={Boolean(selectedTopic)} canGenerate={Boolean(topics.length)} isShuffling={isShuffling} canContinue={topicType!=='debate' || debateSide!==null}/>
     </section>
   );
 }

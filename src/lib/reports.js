@@ -9,6 +9,8 @@ export function reportText(report, topic = '') {
   const m = report.metrics || {};
   lines.push(`${m.wordCount ?? '—'} words · ${m.wordsPerMinute ?? '—'} words/min · ${m.fillerCount ?? '—'} fillers`, `Duration: ${m.durationSeconds ?? '—'} seconds`, '');
   const c = report.coaching;
+  if(c?.focusReview)lines.push('Practiced improvement',c.focusReview.assessment,'Before: '+c.focusReview.previousQuote,'Now: '+c.focusReview.currentQuote,'');
+  if (c?.rating) lines.push('Speech score: ' + c.rating.stars + '/10 stars', c.rating.reason, '');
   if (!c) lines.push(report.coachingError || 'Written coaching unavailable.');
   else if (c.argumentLogic) {
     lines.push(c.summary || '', '', 'Argument and logic', c.argumentLogic.assessment || '', 'Rhetorical structure', c.argumentLogic.rhetoricalStructure || '', 'Persuasiveness', c.argumentLogic.persuasiveness || '');

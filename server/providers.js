@@ -57,7 +57,7 @@ export async function generateCoaching(transcript, metadata, metrics, config, si
         contents: [{ role: 'user', parts: [{ text: JSON.stringify({ practice: metadata, transcript, metrics, verification, disfluenciesPreserved: true }) }] }],
         generationConfig: {
           responseMimeType: 'application/json', responseSchema: FRAMEWORK_SCHEMA,
-          temperature: 0.2, maxOutputTokens: 8000,
+          temperature: 0.2, maxOutputTokens: metadata.parentJobId ? 2500 : 4000,
           // Gemini 3.x rejects the legacy zero thinkingBudget used by 2.5 Flash-Lite.
           ...(config.geminiModel.startsWith('gemini-2.5-flash') ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
         },
@@ -66,7 +66,7 @@ export async function generateCoaching(transcript, metadata, metrics, config, si
   );
   const text = response.candidates?.[0]?.content?.parts?.filter((part) => !part.thought).map((part) => part.text || '').join('');
   if (!text) throw new Error('No coaching was returned.');
-  return { ...validateFramework(JSON.parse(text), transcript, verification.sources, metrics.wordCount), groundingMetadata: verification.groundingMetadata };
+  return { ...validateFramework(JSON.parse(text), transcript, verification.sources, metrics.wordCount, metadata), groundingMetadata: verification.groundingMetadata };
 }
 
 export function logCoachingFailure(error, model) {
@@ -105,7 +105,7 @@ export async function analyzeAudio(audio, mimeType, metadata, config, onProgress
         audio_url: uploadUrl, speech_models: [config.assemblyModel],
         language_code: 'en', disfluencies: true, punctuate: true, format_text: false,
         // Bound processing independently of the duration claimed by the browser.
-        audio_end_at: config.maxSeconds * 1000,
+        audio_end_at: (metadata.parentJobId ? 60 : config.maxSeconds) * 1000,
     });
     if (typeof submitted.id !== 'string' || !/^[a-zA-Z0-9-]+$/.test(submitted.id)) throw new Error('Invalid transcription response.');
     transcriptId = submitted.id;
@@ -121,7 +121,7 @@ export async function analyzeAudio(audio, mimeType, metadata, config, onProgress
     }
     if (transcript.length > 30000) throw new Error('Transcript exceeds the supported practice length.');
     const duration = Number(transcription.audio_duration);
-    if (!Number.isFinite(duration) || duration <= 0 || duration > config.maxSeconds + 2) throw new Error('Unsupported recording duration.');
+    if (!Number.isFinite(duration) || duration <= 0 || duration > (metadata.parentJobId ? 60 : config.maxSeconds) + 2) throw new Error('Unsupported recording duration.');
     const metrics = measureSpeech(transcription.words, duration);
     result = { transcript, words: transcription.words.map(({text,start,end})=>({text,start,end})), metrics, coaching: null, coachingError: null, demo: false };
     onProgress('coaching');

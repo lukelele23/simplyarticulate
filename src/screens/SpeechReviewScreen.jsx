@@ -5,7 +5,7 @@ import { lazy, Suspense } from 'react';
 const SpeechAnalysis = lazy(() => import('../components/SpeechAnalysis.jsx'));
 
 export default function SpeechReviewScreen({
-  user, onSignUp, onRetry, previousTake, focus, onResult, initialReport,
+  onRemoveSavedFeedback, onScore, user, onSignUp, onRetry, previousTake, focus, onResult, initialReport,
   topic,
   onSave,
   recording,
@@ -15,7 +15,7 @@ export default function SpeechReviewScreen({
   const [report,setReport]=useState(initialReport || null);
   const receiveReport=useCallback(value=>{setReport(value);onResult?.(value);},[onResult]);
   return (
-    <main className="screen timer-screen">
+    <main tabIndex={-1} id="main-content" className="screen timer-screen">
       <section className="grid w-full max-w-2xl gap-5 rounded-[28px] border border-line bg-panel/95 p-5 text-left shadow-[0_32px_90px_rgba(0,0,0,0.4),inset_0_1px_rgba(255,255,255,0.04)] sm:p-8">
         <header className="grid gap-2">
           <p className="eyebrow">SPEECH COMPLETE</p>
@@ -23,7 +23,7 @@ export default function SpeechReviewScreen({
           <p className="timer-topic">{topic}</p>
         </header>
 
-        {recording && <Suspense fallback={<p className="analysis-muted" role="status">Loading speech analysis…</p>}><SpeechAnalysis recording={recording} metadata={analysisMetadata} user={user} onSignUp={onSignUp} onRetry={onRetry} onReportChange={onAnalysisChange} onResult={receiveReport} initialReport={initialReport} /></Suspense>}
+        {recording && <Suspense fallback={<p className="analysis-muted" role="status">Loading speech analysis…</p>}><SpeechAnalysis onRemoveSavedFeedback={onRemoveSavedFeedback} onScore={onScore} recording={recording} metadata={analysisMetadata} user={user} onSignUp={onSignUp} onRetry={onRetry} onFeedbackPreference={onAnalysisChange} onReportChange={onAnalysisChange} onResult={receiveReport} initialReport={initialReport} /></Suspense>}
 
         {recording && <SaveAudio recording={recording} user={user} topic={topic} difficulty={analysisMetadata.difficulty}/>}
         <TakeComparison previous={previousTake} recording={recording} report={report} focus={focus}/>
@@ -34,9 +34,9 @@ export default function SpeechReviewScreen({
             onClick={onSave}
             disabled={!recording}
           >
-            {user ? "Save progress" : "Finish practice"}
+            {user ? "Done — save practice" : "Finish practice"}
           </button>
-          <p className="analysis-muted">Save progress keeps the date, topic and duration. Feedback is included only if you select “Keep this transcript and feedback.” Audio is a separate choice above.</p>
+          <p className="analysis-muted">Your star score saves automatically after analysis. Save progress keeps the date, topic and duration. Full feedback is included only if you choose to keep it. Audio is a separate choice above.</p>
         </div>
       </section>
     </main>

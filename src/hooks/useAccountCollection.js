@@ -1,85 +1,53 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '../../utils/supabase.js';
-
-const idOf = (kind,item) => kind === 'favorite' ? item : item.id;
-function cloudPayload(kind,item) {
-  if(kind==='favorite')return {topic:item};
-  // Older feedback was consented to for this device only. Migrate its progress,
-  // retaining the private report locally until the user saves with sync consent.
-  if(item.syncFeedback)return item;
-  const {analysis,...progress}=item;return progress;
-}
-function read(kind,owner) {
-  try {
-    const cached = localStorage.getItem(`sa-sync:${kind}:${owner}`);
-    if (cached) {const value=JSON.parse(cached);if(Array.isArray(value?.items)&&value.pending&&typeof value.pending==='object')return value;}
-    const legacy = JSON.parse(localStorage.getItem(`simply-articulate-${kind === 'session' ? 'sessions' : 'favorites'}:${owner}`) || '[]');
-    return { items: Array.isArray(legacy) ? legacy : [], pending: {}, imported: false };
-  } catch { return {items:[],pending:{},imported:false}; }
-}
-export default function useAccountCollection(kind,userId) {
-  const owner=userId || 'signed-out', key=`sa-sync:${kind}:${owner}`;
-  const [state,setState]=useState(()=>({key,...read(kind,owner)}));
-  const [status,setStatus]=useState('local'), [error,setError]=useState(''), [revision,setRevision]=useState(0);
-  const active=useRef({key,...read(kind,owner)}), mounted=useRef(true);
-  if(active.current.key!==key) active.current={key,...read(kind,owner)};
-  const persist=useCallback(next=>{
-    active.current=next;
-    try { localStorage.setItem(key,JSON.stringify(next)); }
-    catch { setError('This browser could not save your progress. Keep this page open and retry syncing or free local storage.'); }
-    setState(next);
-  },[key]);
-  const setItems=useCallback(update=>{
-    const current=active.current, items=typeof update==='function'?update(current.items):update;
-    const before=new Map(current.items.map(item=>[idOf(kind,item),item])), after=new Map(items.map(item=>[idOf(kind,item),item]));
-    const pending={...current.pending};
-    for(const [id,item] of after) if(JSON.stringify(before.get(id))!==JSON.stringify(item)) pending[id]={user_id:owner,kind,item_id:id,payload:cloudPayload(kind,item),deleted:false,operation:crypto.randomUUID()};
-    for(const [id,item] of before) if(!after.has(id)) pending[id]={user_id:owner,kind,item_id:id,payload:cloudPayload(kind,item),deleted:true,operation:crypto.randomUUID()};
-    persist({...current,items,pending}); setRevision(n=>n+1);
-  },[kind,owner,persist]);
-  useEffect(()=>{mounted.current=true; return()=>{mounted.current=false;};},[]);
-  useEffect(()=>{
-    let cancelled=false, running=false;
-    const controller=new AbortController();
-    const valid=()=>!cancelled && mounted.current && active.current.key===key;
-    async function sync() {
-      if(running || !userId || !valid())return;
-      running=true; setStatus('syncing');
-      try {
-        // Page through account records; Supabase otherwise truncates large histories.
-        let rows=[], offset=0;
-        while(true) {
-          const result=await supabase.from('practice_items').select('item_id,payload,deleted').eq('user_id',owner).eq('kind',kind).order('item_id').range(offset,offset+499).abortSignal(controller.signal);
-          if(result.error)throw result.error;
-          rows.push(...result.data); if(result.data.length<500)break; offset+=500;
-        }
-        if(!valid())return;
-        let current=active.current, pending={...current.pending};
-        if(!current.imported) {
-          const remoteIds=new Set(rows.map(row=>row.item_id));
-          for(const item of current.items) { const id=idOf(kind,item); if(!remoteIds.has(id) && !pending[id])pending[id]={user_id:owner,kind,item_id:id,payload:cloudPayload(kind,item),deleted:false,operation:crypto.randomUUID()}; }
-        }
-        const merged=new Map(rows.filter(r=>!r.deleted).map(r=>[r.item_id,kind==='favorite'?r.payload.topic:r.payload]));
-        for(const [id,row] of Object.entries(pending)) { if(row.deleted)merged.delete(id); else merged.set(id,kind==='favorite'?row.payload.topic:row.payload); }
-        if(kind==='session')for(const local of current.items){if(local.analysis&&!local.syncFeedback&&merged.has(local.id)&&!merged.get(local.id).analysis)merged.set(local.id,{...merged.get(local.id),analysis:local.analysis});}
-        const items=[...merged.values()].filter(item=>kind==='favorite'?typeof item==='string':item&&typeof item.topic==='string'&&typeof item.date==='string');
-        if(kind==='session')items.sort((a,b)=>(b.createdAt || b.date).localeCompare(a.createdAt || a.date));
-        persist({...current,items,pending,imported:true});
-        for(const [id,row] of Object.entries(pending)) {
-          const {operation,...record}=row;
-          const result=await supabase.from('practice_items').upsert(record,{onConflict:'user_id,kind,item_id'}).abortSignal(controller.signal);
-          if(result.error)throw result.error;
-          if(!valid())return;
-          current=active.current;
-          if(current.pending[id]?.operation===operation) { const next={...current.pending}; delete next[id]; persist({...current,pending:next}); }
-        }
-        if(valid()){setStatus(Object.keys(active.current.pending).length?'pending':'synced');setError('');}
-      } catch(cause) { if(valid()){setStatus('pending');setError(cause.code==='PGRST205'||cause.code==='42P01'?'Account sync is awaiting database setup. Progress stays on this device.':'Account sync is unavailable. Progress stays on this device and will retry automatically.');} }
-      finally{running=false;}
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {supabase} from '../../utils/supabase.js';
+import {cloudPayload,mergeAccountRows,settleAccountWrite} from '../lib/accountSync.js';
+function read(owner){try{const cached=JSON.parse(localStorage.getItem('sa-sync:session:'+owner)||'null');if(cached&&Array.isArray(cached.items))return {...cached,versions:cached.versions||{},cursor:0,pending:cached.pending||{}};const items=JSON.parse(localStorage.getItem('simply-articulate-sessions:'+owner)||'[]');return {items:Array.isArray(items)?items:[],pending:{},versions:{},cursor:0,imported:false};}catch{return {items:[],pending:{},versions:{},cursor:0,imported:false};}}
+export default function useAccountCollection(kind,userId){
+ const owner=userId||'signed-out',key='sa-sync:session:'+owner;
+ const [state,setState]=useState(()=>({key,...read(owner)}));
+ const active=useRef(state),mounted=useRef(true),syncRef=useRef(()=>{});
+ const [status,setStatus]=useState('local'),[error,setError]=useState('');
+ if(active.current.key!==key)active.current={key,...read(owner)};
+ const persist=useCallback(next=>{active.current=next;try{localStorage.setItem(key,JSON.stringify(next));}catch{setError('Progress could not be saved on this device. Keep this page open and retry.');}setState(next);},[key]);
+ const setItems=useCallback(update=>{
+  const current=active.current,items=typeof update==='function'?update(current.items):update;
+  if(items===current.items)return;
+  const before=new Map(current.items.map(item=>[item.id,item])),after=new Map(items.map(item=>[item.id,item])),pending={...current.pending};
+  for(const [id,item] of after)if(JSON.stringify(before.get(id))!==JSON.stringify(item))pending[id]={payload:cloudPayload(item),deleted:false,baseVersion:current.pending[id]?.baseVersion??current.versions[id]??0,operation:crypto.randomUUID()};
+  for(const [id,item] of before)if(!after.has(id))pending[id]={payload:cloudPayload(item),deleted:true,baseVersion:current.pending[id]?.baseVersion??current.versions[id]??0,operation:crypto.randomUUID()};
+  persist({...current,items,pending});void syncRef.current();
+ },[persist]);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+ useEffect(()=>{
+  let cancelled=false,running=false,rerun=false;
+  const controller=new AbortController();
+  const valid=()=>!cancelled&&mounted.current&&active.current.key===key;
+  async function sync(force=false){
+   if(!userId||!valid()||(!force&&document.hidden))return;
+   if(running){rerun=true;return;}running=true;setStatus('syncing');
+   try{
+    let cursor=active.current.cursor||0,rows=[];
+    while(true){const result=await supabase.from('practice_items').select('item_id,payload,deleted,version,change_seq').eq('user_id',owner).eq('kind','session').gt('change_seq',cursor).order('change_seq').limit(500).abortSignal(controller.signal);if(result.error)throw result.error;if(!valid())return;rows.push(...result.data);if(result.data.length)cursor=Math.max(cursor,...result.data.map(row=>Number(row.change_seq)));if(result.data.length<500)break;}
+    let current=active.current,versions={...current.versions},pending={...current.pending};
+    rows.forEach(row=>{versions[row.item_id]=row.version;});
+    if(!current.imported){const ids=new Set(rows.map(row=>row.item_id));for(const item of current.items)if(!ids.has(item.id)&&!pending[item.id])pending[item.id]={payload:cloudPayload(item),deleted:false,baseVersion:0,operation:crypto.randomUUID()};}
+    // Pending base versions intentionally stay unchanged: stale edits cannot overwrite newer server data.
+    persist({...current,versions,pending,cursor,imported:true,items:mergeAccountRows(current.items,rows,pending)});
+    let conflicts=0;
+    for(const [id,change] of Object.entries(pending)){
+     const result=await supabase.rpc('practice_apply',{p_id:id,p_version:change.baseVersion??0,p_payload:change.payload,p_deleted:change.deleted,p_operation:change.operation}).abortSignal(controller.signal);if(result.error)throw result.error;if(!valid())return;
+     if(!result.data.applied)conflicts++;
+     persist(settleAccountWrite(active.current,id,change.operation,result.data));
     }
-    void sync(); const timer=setInterval(sync,30000);
-    window.addEventListener('online',sync); window.addEventListener('focus',sync);
-    return()=>{cancelled=true;controller.abort();clearInterval(timer);window.removeEventListener('online',sync);window.removeEventListener('focus',sync);};
-  },[key,userId,kind,owner,persist,revision]);
-  return [state.key===key?state.items:active.current.items,setItems,{status,error,retry:()=>setRevision(n=>n+1)}];
+    if(valid()){setStatus(Object.keys(active.current.pending).length?'pending':'synced');setError(conflicts?'A newer account version was kept instead of an older offline edit. Review your progress before changing it again.':'');}
+   }catch(cause){if(valid()){setStatus('pending');setError(['PGRST202','PGRST205','42P01','42703'].includes(cause.code)?'Account sync needs the latest database migration. Your progress stays on this device.':'Account sync is unavailable. Your progress stays on this device and will retry.');}}
+   finally{running=false;if(rerun&&valid()){rerun=false;void sync();}}
+  }
+  syncRef.current=()=>sync(true);void sync(true);
+  const timer=setInterval(()=>sync(),60000),reconcile=setInterval(()=>{if(!document.hidden){active.current={...active.current,cursor:0};void sync();}},3600000);
+  const focus=()=>sync(),online=()=>sync(true),visibility=()=>{if(!document.hidden)void sync();};
+  addEventListener('focus',focus);addEventListener('online',online);document.addEventListener('visibilitychange',visibility);
+  return()=>{cancelled=true;controller.abort();clearInterval(timer);clearInterval(reconcile);removeEventListener('focus',focus);removeEventListener('online',online);document.removeEventListener('visibilitychange',visibility);syncRef.current=()=>{};};
+ },[key,userId,owner,persist]);
+ return [state.key===key?state.items:active.current.items,setItems,{status,error,retry:()=>syncRef.current()}];
 }

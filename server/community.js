@@ -89,6 +89,7 @@ export function communityStore(directory) {
    const entry={id:randomUUID(),owner,sourceJob:job.id,day:job.metadata.challengeId,name:job.metadata.publicUsername,score:review.score,dimensions:review.dimensions.map(({name,score})=>({name,score})),rubricVersion:review.rubricVersion,topic:job.metadata.topic,transcript:shareTranscript?job.result.transcript:null,createdAt:new Date().toISOString()};
    entries.push(entry);try{save();}catch(error){entries.pop();throw error;}return publicEntry(entry);
   },
+  purge(owner){entries=entries.filter(e=>e.owner!==owner);attempts=attempts.filter(a=>a.owner!==owner);save();saveAttempts();},
   withdraw(owner,day){const previous=entries;entries=entries.map(e=>e.owner===owner&&e.day===day?{...e,withdrawn:true,transcript:null,name:null}:e);try{save();}catch(error){entries=previous;throw error;}}
  };
 }

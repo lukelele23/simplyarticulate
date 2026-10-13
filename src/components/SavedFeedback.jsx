@@ -1,3 +1,4 @@
+import SpeechStars from './SpeechStars.jsx';
 import FrameworkFeedback from './FrameworkFeedback.jsx';
 
 export default function SavedFeedback({ report }) {
@@ -11,5 +12,6 @@ export default function SavedFeedback({ report }) {
       <p><strong>Organization:</strong> {c.organization}</p><p><strong>Relevance:</strong> {c.relevance}</p>
       <ul>{(c.improvements || []).map((item, i) => <li key={i}>{item}</li>)}</ul><p><strong>Next exercise:</strong> {c.nextExercise}</p>
     </> : <p>{report.coachingError || 'Written coaching unavailable.'}</p>}
+    <SpeechStars rating={c?.rating} />
   </div>;
 }

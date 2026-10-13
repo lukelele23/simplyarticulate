@@ -1,95 +1,36 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Origin": "*",
-};
-
-function jsonResponse(body: Record<string, string>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-  if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed." }, 405);
-  }
-
-  const authorization = request.headers.get("Authorization");
-  const accessToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
-  if (!accessToken) {
-    return jsonResponse({ error: "Authentication is required." }, 401);
-  }
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    console.error("Account deletion is missing required Supabase environment variables.");
-    return jsonResponse({ error: "Account deletion is not configured." }, 500);
-  }
-
-  const userClient = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-  });
-  const { data: { user }, error: userError } = await userClient.auth.getUser();
-  if (userError || !user) {
-    return jsonResponse({ error: "Your session is invalid or expired. Sign in again." }, 401);
-  }
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  try {
-    const files: string[] = [];
-    const folders = [user.id];
-
-    while (folders.length > 0) {
-      const folder = folders.pop();
-      if (folder === undefined) continue;
-      let offset = 0;
-
-      while (true) {
-        const { data: entries, error: listError } = await adminClient.storage
-          .from("speech-recordings")
-          .list(folder, { limit: 1000, offset });
-        if (listError) throw listError;
-
-        for (const entry of entries ?? []) {
-          const path = `${folder}/${entry.name}`;
-          if (entry.id === null) {
-            folders.push(path);
-          } else {
-            files.push(path);
-          }
-        }
-
-        if (!entries || entries.length < 1000) break;
-        offset += entries.length;
-      }
-    }
-
-    for (let index = 0; index < files.length; index += 100) {
-      const { error: removeError } = await adminClient.storage
-        .from("speech-recordings")
-        .remove(files.slice(index, index + 100));
-      if (removeError) throw removeError;
-    }
-
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
-    if (deleteError) throw deleteError;
-
-    return jsonResponse({ message: "Account and associated data deleted." });
-  } catch (error) {
-    console.error("Failed to delete account data:", error);
-    return jsonResponse({ error: "Could not delete the account and its data. Please try again." }, 500);
-  }
+import {createClient} from "npm:@supabase/supabase-js@2";
+import {verifyDeletion,runDeletion,removeAccountFiles} from '../_shared/accountDeletion.js';
+const cors={"Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS","Access-Control-Allow-Origin":"*"};
+Deno.serve(async request=>{
+ const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+ if(request.method==='OPTIONS')return new Response('ok',{headers:cors});
+ if(request.method!=='POST')return reply({error:'Method not allowed.'},405);
+ const token=request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
+ if(!token)return reply({error:'Sign in required.'},401);
+ const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+ if(!url||!key)return reply({error:'Account deletion is not configured.'},503);
+ const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+ let body:any;try{body=await request.json();}catch{return reply({error:'Invalid deletion request.'},400);}
+ if(!/^[a-f0-9-]{36}$/.test(body.operationId||''))return reply({error:'A deletion operation ID is required.'},400);
+ const receipt=await db.from('account_deletions').select('user_id').eq('id',body.operationId).maybeSingle();
+ if(!receipt.error&&receipt.data&&receipt.data.user_id===null)return reply({message:'Account and associated data deleted.',completed:true,operation:body.operationId});
+ const {data:{user},error}=await db.auth.getUser(token);if(error||!user)return reply({error:'Sign in again to continue.'},401);
+ let operation: string | undefined;
+ try{
+  verifyDeletion(user,body.confirmation);
+  const journal=await db.from('account_deletions').upsert({id:body.operationId,user_id:user.id},{onConflict:'user_id',ignoreDuplicates:true}).select().maybeSingle();
+  if(journal.error)throw journal.error;
+  const loaded=journal.data||await db.from('account_deletions').select('*').eq('user_id',user.id).single().then(r=>{if(r.error)throw r.error;return r.data;});
+  operation=loaded.id;
+  if(operation!==body.operationId){const changed=await db.from('account_deletions').update({id:body.operationId}).eq('user_id',user.id);if(changed.error)throw changed.error;operation=body.operationId;}
+  const result=await runDeletion({load:async()=>({completed:loaded.completed||[]}),save:async(state:any)=>{const r=await db.from('account_deletions').update({completed:state.completed,updated_at:new Date().toISOString()}).eq('id',operation);if(r.error)throw r.error;},stages:[
+   {name:'public_entries',run:async()=>{const r=await db.from('sa_entries').delete().eq('user_id',user.id);if(r.error)throw r.error;}},
+   {name:'recordings',run:async()=>removeAccountFiles(db.storage.from('speech-recordings'),user.id)},
+   {name:'account',run:async()=>{const r=await db.auth.admin.deleteUser(user.id);if(r.error)throw r.error;}}
+  ]});
+  // No identity or speech content is retained in the completed operation record.
+  // The opaque receipt survives briefly so a lost final response can be acknowledged after Auth deletion.
+  await db.from('account_deletions').update({updated_at:new Date().toISOString()}).eq('id',operation);
+  return reply({...result,operation});
+ }catch(cause:any){if(operation){const receipt=await db.from('account_deletions').select('user_id').eq('id',operation).maybeSingle();if(receipt.data&&receipt.data.user_id===null)return reply({message:'Account and associated data deleted.',completed:true,operation});}return reply({error:cause.status?cause.message:'Deletion is incomplete. Some data may already be removed. Retry to resume the remaining cleanup.',operation},cause.status||503);}
 });

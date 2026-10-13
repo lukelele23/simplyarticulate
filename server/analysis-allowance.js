@@ -26,10 +26,11 @@ export function analysisAllowance(config) {
    practiceUsed:used.practice,challengeUsed:used.challenge,resetAt:Date.parse(`${today}T00:00:00Z`)+86400000};
  }
  function surveyStatus(owner){return {completed:Boolean(data.surveys[owner]),bonusRemaining:data.surveys[owner]?.bonusRemaining||0};}
- return {usage,surveyStatus,completeSurvey(owner,answer){
+ return {purge(owner){delete data.surveys[owner];for(const users of Object.values(data.days))delete users[owner];for(const [token,row] of pending)if(row.owner===owner)pending.delete(token);save();},usage,surveyStatus,completeSurvey(owner,answer,outcome){
+  if(outcome&&!['clarity','presentations','confidence','interviews','debate'].includes(outcome))throw Object.assign(Error('Choose a speaking goal.'),{status:400});
   if(!['yes','maybe','no'].includes(answer))throw Object.assign(Error('Choose an answer to the subscription question.'),{status:400});
   if(data.surveys[owner])return surveyStatus(owner);
-  data.surveys[owner]={answer,completedAt:new Date().toISOString(),bonusRemaining:1};
+  data.surveys[owner]={answer,outcome:outcome||null,completedAt:new Date().toISOString(),bonusRemaining:1};
   try{save();}catch(error){delete data.surveys[owner];throw error;}
   return surveyStatus(owner);
  },reserve(owner,paid,format='speech'){

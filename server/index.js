@@ -1,3 +1,7 @@
+import { verifyDeletion } from '../supabase/functions/_shared/accountDeletion.js';
+import { localDeletionJournal, acknowledgeLocalDeletion } from './local-deletion.js';
+import { focusedRetries } from './focused-retry.js';
+import { isAllowedOrigin } from './allowed-origin.js';
 import {topicVoting} from './topic-voting.js';
 import { analysisAllowance, hasPaidEntitlement } from './analysis-allowance.js';
 import http from 'node:http';
@@ -54,7 +58,11 @@ export function createAnalysisServer(config, dependencies = {}) {
   const voting = topicVoting(config,fetchImpl,dependencies.now || Date.now);
   const getChallenge = dependencies.getChallenge || voting.challenge;
   const allowance = analysisAllowance(config);
+  const retries = focusedRetries(config);
+  const activeTasks=new Set();
+  const track=promise=>{activeTasks.add(promise);promise.catch(()=>console.error("Background analysis cleanup failed.")).finally(()=>activeTasks.delete(promise));};
   const entitlements = new Map();
+  const authenticatedUsers=new Map();
   const jobs = new Map();
   const rates = new Map();
   const quotaPath = path.join(config.dataDir, 'usage.json');
@@ -111,6 +119,7 @@ export function createAnalysisServer(config, dependencies = {}) {
     if (!response.ok) throw Object.assign(new Error('Your sign-in expired. Sign in again.'), { status: 401 });
     const user = await response.json();
     if (typeof user.id !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(user.id)) throw Object.assign(new Error('Invalid sign-in.'), { status: 401 });
+    authenticatedUsers.set(user.id,user);
     entitlements.set(user.id, hasPaidEntitlement(user));
     return user.id;
   }
@@ -156,9 +165,12 @@ export function createAnalysisServer(config, dependencies = {}) {
       }
       if (!config.demo) allowance.finish(job.analysisToken, Boolean(job.result.transcript || job.result.communityReview));
       if (!config.demo && metadata.format==='daily-challenge')store.completeAttempt(job.owner,metadata.challengeId,job);
+      retries.record(job);
+      if(metadata.parentJobId)retries.finish(metadata.parentJobId,true);
       job.status = 'completed';
     } catch (error) {
       if(!config.demo&&!job.result)settle(job.owner,job.reservedDay,0);
+      if(metadata.parentJobId)retries.finish(metadata.parentJobId,false);
       job.status = 'error';
       job.error = job.controller.signal.aborted ? 'Analysis stopped or timed out. Your recording is still available for playback.' :
         ['No speech was detected. Try recording again in a quieter place.', 'This recording could not be transcribed. Check the audio and try again.'].includes(error.message)
@@ -175,7 +187,7 @@ export function createAnalysisServer(config, dependencies = {}) {
   const server = http.createServer(async (req, res) => {
     try {
       const origin = req.headers.origin;
-      if (origin && !config.allowedOrigins.has(origin)) return respond(res, 403, { error: 'This website origin is not allowed.' });
+      if (!isAllowedOrigin(origin, config)) return respond(res, 403, { error: 'This website origin is not allowed.' });
       // The frontend uses a same-origin /api proxy. No wildcard CORS is enabled.
       const url = new URL(req.url, 'http://localhost');
       if(req.method==='GET'&&url.pathname==='/api/analysis/health')return respond(res,configured()?200:503,{ready:configured()});
@@ -218,13 +230,34 @@ export function createAnalysisServer(config, dependencies = {}) {
         const owner = await authenticate(req);
         store.withdraw(owner,new Date().toISOString().slice(0,10)); return respond(res,200,{withdrawn:true});
       }
+      if(req.method==='POST'&&url.pathname==='/api/analysis/delete-account'){
+        const body=JSON.parse((await readBody(req,2048)).toString('utf8'));
+        let owner;
+        try{owner=await authenticate(req);}catch(error){
+          if(error.status===401&&/^[a-f0-9-]{36}$/.test(body.operationId||'')){
+            const receipt=await fetchImpl(config.supabaseUrl.replace(/\/$/,'')+'/functions/v1/delete-account',{method:'POST',headers:{authorization:req.headers.authorization,apikey:config.supabaseKey,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000)});
+            if(receipt.ok){const result=await receipt.json();if(result.completed){acknowledgeLocalDeletion(config.dataDir,body.operationId);return respond(res,200,result);}}
+          }
+          throw error;
+        }
+        verifyDeletion(authenticatedUsers.get(owner),body.confirmation);
+        // Stop and settle this account's provider work before purging its ledgers.
+        for(const job of jobs.values())if(job.owner===owner)job.controller.abort();
+        await Promise.allSettled([...activeTasks]);
+        const result=await localDeletionJournal(config.dataDir,owner,[
+          {name:'local_records',run:async()=>{allowance.purge(owner);store.purge(owner);voting.purge(owner);retries.purge(owner);delete quota.users[owner];saveQuota();for(const [id,job] of jobs)if(job.owner===owner)jobs.delete(id);rates.delete(owner);authenticatedUsers.delete(owner);entitlements.delete(owner);}},
+          {name:'cloud_account',run:async()=>{const r=await fetchImpl(config.supabaseUrl.replace(/\/$/,'')+'/functions/v1/delete-account',{method:'POST',headers:{authorization:req.headers.authorization,apikey:config.supabaseKey,'Content-Type':'application/json'},body:JSON.stringify({confirmation:body.confirmation,operationId:body.operationId}),signal:AbortSignal.timeout(120000)});if(!r.ok)throw Object.assign(Error('Deletion is incomplete. Local records may already be removed. Retry to resume account cleanup.'),{status:503});}}
+        ],body.operationId).run();
+        return respond(res,200,result);
+      }
+      if(req.method==='GET'&&url.pathname==='/api/analysis/focused-retry'){const owner=await authenticate(req);return respond(res,200,retries.status(owner,url.searchParams.get('parent')));}
       if(url.pathname==='/api/analysis/subscription-survey'){
         const owner=await authenticate(req);
         if(req.method==='GET')return respond(res,200,allowance.surveyStatus(owner));
         if(req.method==='POST'){
           rateLimit(owner);
           let body;try{body=JSON.parse((await readBody(req,2048)).toString('utf8'));}catch(error){if(error.status)throw error;return respond(res,400,{error:'Choose a survey answer.'});}
-          return respond(res,200,allowance.completeSurvey(owner,body?.answer));
+          return respond(res,200,allowance.completeSurvey(owner,body?.goal?'maybe':body?.answer,body?.goal));
         }
         return respond(res,405,{error:'Method not allowed.'});
       }
@@ -268,6 +301,7 @@ export function createAnalysisServer(config, dependencies = {}) {
         }
         const audio = Buffer.from(await file.arrayBuffer());
         const requestKey = req.headers['idempotency-key'];
+        if(metadata.parentJobId&&!requestKey)return respond(res,400,{error:'A stable request key is required for a focused retry.'});
         if (requestKey && (typeof requestKey !== 'string' || !/^[a-zA-Z0-9-]{10,100}$/.test(requestKey))) return respond(res,400,{error:'Invalid request key.'});
         const digest = createHash('sha256').update(audio).update(JSON.stringify(metadata)).digest('hex');
         const previous = requestKey && [...jobs.values()].find(j=>j.owner===owner && j.requestKey===requestKey);
@@ -286,10 +320,11 @@ export function createAnalysisServer(config, dependencies = {}) {
             [...jobs.values()].some((job) => job.owner === owner && !job.finishedAt) || jobs.size >= 500) {
           return respond(res, 429, { error: 'Analysis is busy. Please wait for it to finish.' });
         }
-        const analysisToken = config.demo ? null : allowance.reserve(owner, entitlements.get(owner), metadata.format);
+        if(metadata.parentJobId)Object.assign(metadata,retries.claim(owner,metadata.parentJobId,requestKey,digest,metadata));
+        const analysisToken = config.demo || metadata.parentJobId ? null : allowance.reserve(owner, entitlements.get(owner), metadata.format);
         let reservedDay;
         try { reservedDay = config.demo ? null : reserve(owner); }
-        catch (error) { allowance.finish(analysisToken, false); throw error; }
+        catch (error) { allowance.finish(analysisToken, false); if(metadata.parentJobId)retries.finish(metadata.parentJobId,false); throw error; }
         if(metadata.format==='daily-challenge' && !config.demo){
           try {
             if(!store.reserveAttempt(owner,metadata.challengeId,digest,requestKey)){
@@ -304,7 +339,7 @@ export function createAnalysisServer(config, dependencies = {}) {
         const job = { id: randomUUID(), owner, metadata, reservedDay, analysisToken, requestKey, digest, status: 'queued', controller: new AbortController(), createdAt: Date.now() };
         jobs.set(job.id, job);
         respond(res, 202, snapshot(job));
-        void processJob(job, audio, file.type, metadata);
+        track(processJob(job, audio, file.type, metadata));
         return;
       }
       const match = url.pathname.match(/^\/api\/analysis\/([a-f0-9-]{36})(\/coaching|\/review)?$/);
@@ -324,11 +359,11 @@ export function createAnalysisServer(config, dependencies = {}) {
         if((job.reviewRetries||0)>=3)return respond(res,429,{error:'Community review retry limit reached.'});
         job.reviewRetries=(job.reviewRetries||0)+1;job.status='moderating';job.finishedAt=null;
         respond(res,202,snapshot(job));
-        void (async()=>{
+        track((async()=>{
         try {job.result.communityReview=await review(job.result,job.metadata,config,AbortSignal.timeout(35000),fetchImpl);}
         catch {job.result.communityReview={moderation:'review',eligible:false,retryable:true,reason:'Review unavailable. Your transcript stays private.'};}
         finally {job.status='completed';job.finishedAt=Date.now();store.completeAttempt(owner,job.metadata.challengeId,job);}
-        })().catch(()=>console.error('Community retry persistence failed.'));
+        })());
         return;
       }
       if (req.method === 'POST' && match[2] === '/coaching') {
@@ -348,7 +383,7 @@ export function createAnalysisServer(config, dependencies = {}) {
         const retryTimeout=setTimeout(()=>job.controller.abort(),config.timeoutMs);
         job.status = 'coaching'; job.finishedAt = null;
         respond(res,202,snapshot(job));
-        void (async()=>{
+        track((async()=>{
         try {
           const coaching = await coach(transcript, job.metadata, job.result.metrics, config, job.controller.signal, fetchImpl);
           allowance.finish(refreshToken, true);
@@ -358,7 +393,7 @@ export function createAnalysisServer(config, dependencies = {}) {
           job.result.coachingError = 'Written coaching is temporarily unavailable. Your original transcript and metrics are preserved.';
         }
         finally { clearTimeout(retryTimeout);allowance.finish(refreshToken, false); job.status = 'completed'; job.finishedAt = Date.now(); if(job.metadata.format==='daily-challenge')store.completeAttempt(owner,job.metadata.challengeId,job); }
-        })().catch(()=>console.error('Coaching retry persistence failed.'));
+        })());
         return;
       }
       return respond(res, 405, { error: 'Method not allowed.' });
@@ -377,6 +412,8 @@ export function createAnalysisServer(config, dependencies = {}) {
   }, 60000);
   cleanupTimer.unref();
   server.on('close', () => { clearInterval(cleanupTimer); for (const job of jobs.values()) job.controller.abort(); });
+  const originalClose=server.close.bind(server);
+  server.close=(callback)=>{for(const job of jobs.values())job.controller.abort();return originalClose(()=>{Promise.allSettled([...activeTasks]).then(()=>callback?.());});};
   return server;
 }
 

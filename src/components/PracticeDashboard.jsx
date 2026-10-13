@@ -1,3 +1,6 @@
+import {weeklyDays} from '../lib/practice.js';
+import LearningProgress from './LearningProgress.jsx';
+import SpeechStars from './SpeechStars.jsx';
 import SavedFeedback from './SavedFeedback.jsx';
 function getLocalDateKey(value) {
   const date = new Date(value);
@@ -26,20 +29,6 @@ function getPracticeStreak(sessions) {
   return streak;
 }
 
-function getWeeklyPracticeCount(sessions) {
-  const startOfWeek = new Date();
-  startOfWeek.setHours(0, 0, 0, 0);
-  startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
-  const startDate = getLocalDateKey(startOfWeek);
-  const endDate = getLocalDateKey(new Date());
-
-  return new Set(
-    sessions
-      .filter((session) => session.date >= startDate && session.date <= endDate)
-      .map((session) => session.date)
-  ).size;
-}
-
 function getDisplayName(user) {
   const metadata = user?.user_metadata || {};
   const profileName = [
@@ -54,15 +43,12 @@ function getDisplayName(user) {
 
 export default function PracticeDashboard({
   sessions,
-  favorites,
-  onPracticeFavorite,
-  onRemoveFavorite,
   user,
   isAuthenticated,
   onSignUp,
 }) {
   const streak = getPracticeStreak(sessions);
-  const weeklyPracticeCount = getWeeklyPracticeCount(sessions);
+  const weeklyPracticeCount = weeklyDays(sessions);
 
   return (
     <section className="grid w-full gap-4 rounded-2xl border border-line bg-ink/40 p-4 text-left sm:p-5">
@@ -110,12 +96,13 @@ export default function PracticeDashboard({
               {weeklyPracticeCount}/3
             </p>
             <p className="mb-0 mt-1 text-xs font-semibold text-[#b9bbbd]">
-              practice days this week
+              days in the last 7 days
             </p>
           </article>
         </div>
       )}
 
+      {isAuthenticated && <LearningProgress sessions={sessions} />}
       {isAuthenticated && <details className="rounded-lg border border-[#494b4d] bg-[#262729]">
         <summary className="cursor-pointer px-3 py-2.5 font-semibold text-[#d8d9db]">
           Recent practice (latest {Math.min(50,sessions.length)} of {sessions.length})
@@ -133,6 +120,7 @@ export default function PracticeDashboard({
                     dateStyle: "medium",
                   }).format(new Date(`${session.date}T12:00:00`))}
                 </p>
+                <SpeechStars rating={session.rating || session.analysis?.coaching?.rating} />
                 {session.analysis && <details className="analysis-history">
                   <summary>Saved speech feedback</summary>
                   <SavedFeedback report={session.analysis} />

@@ -1,3 +1,4 @@
+import {analysisRequest} from '../lib/speechAnalysis.js';
 import { useEffect, useRef, useState } from "react";
 import SpeechRecorder from "../components/SpeechRecorder.jsx";
 
@@ -5,6 +6,7 @@ export default function TimerScreen({
   fixedDuration = false,
   format = 'speech',
   focus = "",
+  parentJobId,
   difficulty,
   user,
   topic,
@@ -15,6 +17,8 @@ export default function TimerScreen({
   onClipChange,
   backLabel = "Back to research",
 }) {
+  const [retryEligibility,setRetryEligibility]=useState(null);
+  useEffect(()=>{if(!parentJobId)return;const request=new AbortController();analysisRequest('/focused-retry?parent='+encodeURIComponent(parentJobId),{signal:request.signal}).then(setRetryEligibility).catch(()=>setRetryEligibility({eligible:false}));return()=>request.abort();},[parentJobId]);
   const [showCountdown, setShowCountdown] = useState(true);
   const finishRef = useRef(false);
   const recorderRef = useRef(null);
@@ -80,10 +84,11 @@ export default function TimerScreen({
   const seconds = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <main className="screen timer-screen">
+    <main tabIndex={-1} id="main-content" className="screen timer-screen">
+      {parentJobId && <p className="analysis-notice" role="status">{retryEligibility===null?'Checking focused retry eligibility…':retryEligibility.eligible?'One focused coach assessment is available for this 60-second retry.':'Focused assessment is unavailable. Record and compare by listening, or use an available daily analysis.'}</p>}
       <section className="timer-card speech-layout speaking-timer-page">
-        <header className="speech-heading">
-          <p className="eyebrow">{fixedDuration ? "DAILY CHALLENGE" : "YOUR SPEAKING PRACTICE"}</p>
+        <header className="speech-heading"><h1 tabIndex={-1} className="destination-heading">{parentJobId?'Focused retry':'Speaking practice'}</h1>
+          <p className="eyebrow">{parentJobId ? "FOCUSED RETRY" : fixedDuration && format==='daily-challenge' ? "DAILY CHALLENGE" : "YOUR SPEAKING PRACTICE"}</p>
           {debateSide && (
             <p className="m-0 text-sm font-semibold uppercase tracking-wider text-[#d0d2d4]">
               {debateSide} side
