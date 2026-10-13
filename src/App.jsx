@@ -37,9 +37,28 @@ export default function App() {
   const activeUserIdRef = useRef(undefined);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
+  const guestAdsLoaded = useRef(false);
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (user) {
+      // Auto Ads cannot be unloaded after execution. A fresh authenticated page
+      // removes their runtime and placements and does not load the script again.
+      if (guestAdsLoaded.current) window.location.reload();
+      return;
+    }
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8671776221607890';
+    script.crossOrigin = 'anonymous';
+    script.dataset.simplyarticulateGuestAds = 'true';
+    guestAdsLoaded.current = true;
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [isAuthLoading, user?.id]);
   const {screen,setScreen,view,navigate,backLabel}=useAppNavigation();
   const [screenBeforeSignUp, setScreenBeforeSignUp] = useState("difficulty");
-  const [guestPractice, setGuestPractice] = useState(location.pathname !== '/');
+  const [showIntroduction, setShowIntroduction] = useState(() => { try { return localStorage.getItem("sa-introduction-seen") !== "1"; } catch { return true; } });
+  const dismissIntroduction = useCallback(() => { try { localStorage.setItem("sa-introduction-seen", "1"); } catch {} setShowIntroduction(false); }, []);
   const [practiceSkill, setPracticeSkill] = useState("Clarity");
   const [challengeId, setChallengeId] = useState(null);
   const [retryFocus, setRetryFocus] = useState("");
@@ -237,21 +256,6 @@ export default function App() {
   }
 
 
-  if (!user && !guestPractice && screen !== "signup") {
-    return (
-      <Suspense
-        fallback={
-          <main className="welcome-loading" role="status">
-            <p className="eyebrow">SIMPLYARTICULATE</p>
-            <p>Loading your welcome screen…</p>
-          </main>
-        }
-      >
-        <SplashScreen onEmailSignIn={openSignUp} onExplore={() => { setGuestPractice(true); navigate("/home"); }} onGoogleSignIn={signInWithGoogle} error={authError||draftError} onTryDemo={(prompt) => { setGuestPractice(true); setDifficulty("easy"); setTopicType("speech"); setTopic(prompt); setResearchSecondsLeft(0); setScreen("timer"); }} />
-      </Suspense>
-    );
-  }
-
   if (screen === "signup" && !user) {
     return (
       <LoginScreen
@@ -389,10 +393,19 @@ export default function App() {
     );
   }
 
+  const introductionOpen = showIntroduction && !user && screen === "difficulty";
   return <>
+    <div inert={introductionOpen || undefined} aria-hidden={introductionOpen || undefined}>
     {(sessionSync.error || storageError || draftError) && <div className="storage-notice" role="alert">{storageError || draftError || sessionSync.error}{user && <button className="text-button" onClick={()=>{sessionSync.retry();setStorageError('');}}>Retry saving and sync</button>}</div>}
     <a className="skip-link" href="#main-content">Skip to content</a>
 <Suspense fallback={<main className="welcome-loading" role="status">Loading your practice space…</main>}>{currentScreen}</Suspense>
+    </div>
+    {introductionOpen && <Suspense fallback={null}><div className="introduction-overlay"><SplashScreen onDismiss={() => { dismissIntroduction(); navigate("/home"); }} onExplore={() => { dismissIntroduction(); navigate("/home"); }} onGoogleSignIn={async () => { await signInWithGoogle(); dismissIntroduction(); }} error={authError || draftError} onTryDemo={(prompt) => { dismissIntroduction(); setDifficulty("easy"); setTopicType("speech"); setTopic(prompt); setResearchSecondsLeft(0); setScreen("timer"); }} /></div></Suspense>}
   </>;
 }
+
+
+
+
+
 
