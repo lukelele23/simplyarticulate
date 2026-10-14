@@ -37,24 +37,6 @@ export default function App() {
   const activeUserIdRef = useRef(undefined);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
-  const guestAdsLoaded = useRef(false);
-  useEffect(() => {
-    if (isAuthLoading) return;
-    if (user) {
-      // Auto Ads cannot be unloaded after execution. A fresh authenticated page
-      // removes their runtime and placements and does not load the script again.
-      if (guestAdsLoaded.current) window.location.reload();
-      return;
-    }
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8671776221607890';
-    script.crossOrigin = 'anonymous';
-    script.dataset.simplyarticulateGuestAds = 'true';
-    guestAdsLoaded.current = true;
-    document.head.appendChild(script);
-    return () => script.remove();
-  }, [isAuthLoading, user?.id]);
   const {screen,setScreen,view,navigate,backLabel}=useAppNavigation();
   const [screenBeforeSignUp, setScreenBeforeSignUp] = useState("difficulty");
   const [showIntroduction, setShowIntroduction] = useState(() => { try { return localStorage.getItem("sa-introduction-seen") !== "1"; } catch { return true; } });
@@ -403,6 +385,7 @@ export default function App() {
     {introductionOpen && <Suspense fallback={null}><div className="introduction-overlay"><SplashScreen onDismiss={() => { dismissIntroduction(); navigate("/home"); }} onExplore={() => { dismissIntroduction(); navigate("/home"); }} onGoogleSignIn={async () => { await signInWithGoogle(); dismissIntroduction(); }} error={authError || draftError} onTryDemo={(prompt) => { dismissIntroduction(); setDifficulty("easy"); setTopicType("speech"); setTopic(prompt); setResearchSecondsLeft(0); setScreen("timer"); }} /></div></Suspense>}
   </>;
 }
+
 
 
 
