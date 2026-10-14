@@ -1,0 +1,39 @@
+/* Home cards size to their content, with a full-width community section. */
+#root .home-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;}
+#root .home-grid>.home-panel{min-height:0;padding:18px 20px;}
+#root .home-grid>.home-panel:last-child{grid-column:1/-1;}
+#root .home-panel>h2{margin:0 0 12px;font-size:20px;}
+#root .home-panel>p{margin:8px 0;line-height:1.55;}
+#root .home-panel .score-row{margin:14px 0;gap:16px;}
+#root .home-panel .score-row div{gap:4px;}
+#root .home-panel>.text-button{margin:0;}
+#root .home-panel .daily-leaderboard{padding:0;border:0;border-radius:0;background:transparent;gap:10px;}
+#root .home-panel .daily-leaderboard-header h2{font-size:14px;color:#b9bbbd;}
+#root .home-panel .leaderboard-list:empty{display:none;}
+#root .home-panel .shared-transcripts{padding:12px 0 0;margin:0;border:0;border-top:1px solid #404244;border-radius:0;background:transparent;}
+#root .home-panel .shared-transcripts h2{font-size:15px;margin:0 0 6px;}
+#root .home-panel .shared-transcripts p{margin:4px 0;line-height:1.55;}
+@media(max-width:700px){#root .home-grid{grid-template-columns:minmax(0,1fr);gap:12px;}#root .home-grid>.home-panel{padding:16px;}#root .home-grid>.home-panel:last-child{grid-column:auto;}}
+
+/* Remove blank card tails and excess space around dividers. */
+#root .home-grid{align-content:start;grid-auto-rows:max-content;}
+#root .home-grid>.home-panel,#root .home-panel .daily-leaderboard,#root .home-panel .shared-transcripts{height:auto;min-height:0;max-height:none;align-self:start;align-content:start;}
+#root .home-grid>.home-panel{padding:14px 16px;}
+#root .home-panel>h2{margin-bottom:8px;}
+#root .home-panel .score-row{margin:8px 0;}
+#root .home-panel>p{margin:6px 0;}
+#root .home-panel .shared-transcripts{padding-top:8px;}
+#root .home-panel .daily-leaderboard{gap:6px;}
+#root .home-panel .shared-transcripts p:last-child{margin-bottom:0;}
+#root .practice-invitation{height:auto;min-height:0;padding:16px 20px;margin-bottom:14px;}
+#root .practice-invitation h2{margin:0 0 8px;}
+#root .practice-invitation p{margin:0 0 12px;}
+#root .membership-strip{height:auto;min-height:0;align-items:start;align-content:start;padding:16px 20px;gap:20px;margin-top:14px;}
+#root .membership-strip h2{margin:0 0 8px;}
+#root .membership-strip p{margin:6px 0 0;}
+@media(max-width:700px){#root .practice-invitation,#root .membership-strip{padding:14px 16px;}}
+
+/* Keep Home content close to the navigation divider. */
+#root .app-shell:has(.home-grid) .app-nav{padding-bottom:8px;}
+#root .app-shell:has(.home-grid) .destination-topline{margin:0;}
+#root .app-shell:has(.home-grid) .destination-heading{margin:10px 0 12px;}

@@ -14,3 +14,9 @@ test('unknown, failed and completed states never offer a repeat survey',()=>{
  assert.equal(shouldShowSurvey('b',{owner:'a',completed:false}),false);
  assert.equal(shouldShowSurvey('a',{owner:'a',completed:false}),true);
 });
+
+test('signed-out visitors never see the survey button',()=>{
+ assert.equal(shouldShowSurvey(undefined,null),false);
+ assert.equal(shouldShowSurvey(null,{owner:null,completed:false}),false);
+ assert.equal(shouldShowSurvey('',{owner:'',completed:false}),false);
+});

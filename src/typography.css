@@ -1,0 +1,12 @@
+/* Stable figures wherever timing, progress or scoring can change. */
+#root :is(.countdown,.debate-clock,.debate-prep-sides strong,.score-row,.challenge-score,.leaderboard-rank,.leaderboard-score,.leaderboard-breakdown,.analysis-metrics,.speech-rating h3,.feedback-outcome,.practice-duration-control output,.practice-duration-endpoints,.practice-settings-summary,.take-comparison td,.progress-insights td,.splash-time){font-variant-numeric:lining-nums tabular-nums;}
+
+/* Supporting labels are quieter than the main action or selected destination. */
+#root .practice-control-group legend{font-weight:500;}
+#root .secondary-button:not(.danger-button):not(.nav-sign-in),#root .text-button,#root .practice-settings-toggle{font-weight:400;}
+#root .skill-options button:not([aria-pressed="true"]){font-weight:400;}
+#root :is(.home-panel h2,.shared-transcripts h2,.save-audio h3,.take-comparison h2,.analysis-coaching h3,.feedback-outcome h3,.learning-progress h3){font-weight:500;}
+#root :is(.analysis-coaching p,.feedback-outcome p,.speech-rating p){font-weight:400;}
+#root .analysis-metrics strong{font-weight:600;}
+#root .feedback-outcome p strong{font-weight:500;}
+#root .feedback-outcome p:has(strong):nth-of-type(3) strong{font-weight:700;}

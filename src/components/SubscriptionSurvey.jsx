@@ -44,7 +44,7 @@ export default function SubscriptionSurvey({user,onSignUp}){
   }catch(cause){if(!request?.signal.aborted)setError(cause.message);}
   finally{if(!request?.signal.aborted)setBusy(false);}
  }
- function launch(){if(!user?.id){onSignUp?.();return;}if(!shouldShowSurvey(owner,visibleStatus))return;setOpen(true);dialog.current.showModal();}
+ function launch(){if(!shouldShowSurvey(owner,visibleStatus))return;setOpen(true);dialog.current.showModal();}
  return <>
   {shouldShowSurvey(owner,visibleStatus) && <button className="secondary-button nav-survey" type="button" aria-label="Complete a quick survey" onClick={launch}><span className="survey-full-label">Complete a quick survey</span><span className="survey-short-label" aria-hidden="true">Quick survey</span></button>}
   <dialog ref={dialog} className="subscription-survey" aria-labelledby="subscription-survey-title" onClose={()=>setOpen(false)}>
@@ -57,4 +57,5 @@ export default function SubscriptionSurvey({user,onSignUp}){
   </dialog>
  </>;
 }
+
 

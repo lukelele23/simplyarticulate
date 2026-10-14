@@ -1,0 +1,5 @@
+#root .guest-ad-space{width:100%;margin:32px auto 0;padding-top:20px;border-top:1px solid #404244;text-align:center;}
+#root .guest-ad-label{display:block;margin-bottom:8px;font-size:10px;line-height:1.4;letter-spacing:.08em;text-transform:uppercase;color:#9da1a3;}
+#root .guest-ad-reserved{display:flex;align-items:center;justify-content:center;width:min(100%,970px);min-height:90px;margin:auto;box-sizing:border-box;border:1px dashed #404244;border-radius:8px;background:#121820;color:#747a80;font-size:11px;overflow-wrap:anywhere;}
+#root .guest-ad-reserved>ins{max-width:100%;}
+@media(max-width:600px){#root .guest-ad-space{margin-top:24px;padding-top:16px;}#root .guest-ad-reserved{width:min(100%,320px);min-height:100px;}}

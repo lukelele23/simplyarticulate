@@ -8,5 +8,6 @@ export function rememberSurveyCompletion(owner, status, storage = globalThis.loc
   try { storage.setItem(key(owner), 'true'); } catch { /* The account backend remains authoritative. */ }
 }
 export function shouldShowSurvey(owner, status) {
-  return !owner || (status?.owner === owner && status.completed === false);
+  return Boolean(owner) && status?.owner === owner && status.completed === false;
 }
+

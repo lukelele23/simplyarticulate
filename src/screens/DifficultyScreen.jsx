@@ -1,3 +1,6 @@
+import PracticeSummary from '../components/PracticeSummary.jsx';
+import '../components/homeLayout.css';
+import GuestAdSpace from '../components/GuestAdSpace.jsx';
 import PracticeStages from '../components/PracticeStages.jsx';
 import RecoveryTakes from '../components/RecoveryTakes.jsx';
 import StatsScreen from './StatsScreen.jsx';
@@ -54,12 +57,17 @@ export default function DifficultyScreen({ onRemoveSavedFeedback, onRecover, onS
         </Suspense>
       </> : <>
         <RecoveryTakes user={user} onRecover={onRecover} />
-        <div className={`practice-grid${practiceSettingsExpanded ? ' is-settings-open' : ''}`}><section className={`practice-setup${practiceSettingsExpanded ? '' : ' is-collapsed'}`} aria-label="Practice settings"><div className="practice-settings-heading"><div className="practice-settings-summary"><h2 className="sr-only">Practice settings</h2><p>{topicType === 'debate' ? 'Debate' : topicType === 'research' ? 'Research' : 'Speech'} · {difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'Choose difficulty'} · {settings.speechSeconds < 60 ? `${settings.speechSeconds} sec` : `${Math.floor(settings.speechSeconds / 60)} min${settings.speechSeconds % 60 ? ` ${settings.speechSeconds % 60} sec` : ''}`}</p></div><button className="practice-settings-toggle" type="button" aria-expanded={practiceSettingsExpanded} aria-label={practiceSettingsExpanded ? "Close practice settings" : "Edit practice settings"} aria-controls="practice-settings-content" onClick={() => setPracticeSettingsExpanded((expanded) => !expanded)}><span>{practiceSettingsExpanded ? "Done" : "Edit"}</span></button></div><div id="practice-settings-content" className="practice-settings-content" hidden={!practiceSettingsExpanded}><Tabs difficulty={difficulty} onDifficultyChange={onDifficultyChange} topicType={topicType} onTopicTypeChange={onTopicTypeChange}/><PracticeSettings topicType={topicType} settings={settings} onSettingsChange={onSettingsChange}/></div></section><section className="prompt-workspace"><h2>{topic ? 'Your topic' : 'Choose a topic'}</h2>{difficulty ? <WheelSelector skill={practiceSkill} difficulty={difficulty} topicType={topicType} previousTopic={topic} onSelectTopic={onTopicSelect} onContinueToResearch={onContinueToResearch} /> : <p className="home-panel">Choose a difficulty to find your next topic.</p>}<button className="text-button" onClick={onReset}>Reset this session</button></section></div>
+        <div className={`practice-grid${practiceSettingsExpanded ? ' is-settings-open' : ''}`}><section className={`practice-setup${practiceSettingsExpanded ? '' : ' is-collapsed'}`} aria-label="Practice settings"><div className="practice-settings-heading"><div className="practice-settings-summary"><h2 className="sr-only">Practice settings</h2><PracticeSummary topicType={topicType} difficulty={difficulty} seconds={settings.speechSeconds}/></div><button className="practice-settings-toggle" type="button" aria-expanded={practiceSettingsExpanded} aria-label={practiceSettingsExpanded ? "Close practice settings" : "Edit practice settings"} aria-controls="practice-settings-content" onClick={() => setPracticeSettingsExpanded((expanded) => !expanded)}><span>{practiceSettingsExpanded ? "Done" : "Edit"}</span></button></div><div id="practice-settings-content" className="practice-settings-content" hidden={!practiceSettingsExpanded}><Tabs difficulty={difficulty} onDifficultyChange={onDifficultyChange} topicType={topicType} onTopicTypeChange={onTopicTypeChange}/><PracticeSettings topicType={topicType} settings={settings} onSettingsChange={onSettingsChange}/></div></section><section className="prompt-workspace"><h2>{topic ? 'Your topic' : 'Choose a topic'}</h2>{difficulty ? <WheelSelector skill={practiceSkill} difficulty={difficulty} topicType={topicType} previousTopic={topic} onSelectTopic={onTopicSelect} onContinueToResearch={onContinueToResearch} /> : <p className="home-panel">Choose a difficulty to find your next topic.</p>}</section></div>
       </>}
-      </div><footer className="app-footer"><span>SimplyArticulate</span></footer>
+      </div>{['home','practice','progress'].includes(view) && <GuestAdSpace isAuthenticated={isAuthenticated} placement={view}/>}<footer className="app-footer"><span>SimplyArticulate</span></footer>
     </section>
   </main>;
 }
+
+
+
+
+
 
 
 

@@ -1,3 +1,4 @@
+import GuestAdSpace from './GuestAdSpace.jsx';
 import MainNavigation from './MainNavigation.jsx';
 import PracticeStages from './PracticeStages.jsx';
 import './practiceFrame.css';
@@ -7,6 +8,8 @@ export default function PracticeFrame({stage,includePreparation,user,onViewChang
   <MainNavigation view="practice" onViewChange={onViewChange} isAuthenticated={Boolean(user)} user={user} onOpenSettings={onOpenSettings} onSignUp={onSignUp}/>
   <div className="destination-topline has-practice-stages"><h1 className="destination-heading" tabIndex={-1}>Speaking practice</h1><PracticeStages current={stage} includePreparation={includePreparation}/></div>
   <div className="practice-session-content">{children}</div>
+  {stage === 'review' && <GuestAdSpace isAuthenticated={Boolean(user)} placement="review"/>}
   <footer className="app-footer"><span>SimplyArticulate</span></footer>
  </section></main>;
 }
+
