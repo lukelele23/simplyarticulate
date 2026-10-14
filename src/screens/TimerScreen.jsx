@@ -1,8 +1,11 @@
+import PracticeStages from '../components/PracticeStages.jsx';
 import {analysisRequest} from '../lib/speechAnalysis.js';
 import { useEffect, useRef, useState } from "react";
 import SpeechRecorder from "../components/SpeechRecorder.jsx";
 
 export default function TimerScreen({
+  embedded = false,
+  includePreparation = false,
   fixedDuration = false,
   format = 'speech',
   focus = "",
@@ -38,7 +41,9 @@ export default function TimerScreen({
     };
     const timer = window.setInterval(update, 250);
     update();
-    return () => window.clearInterval(timer);
+    const Container = embedded ? 'div' : 'main';
+  const Heading = embedded ? 'h2' : 'h1';
+  return () => window.clearInterval(timer);
   }, [hasStarted]);
 
   useEffect(() => {
@@ -83,11 +88,13 @@ export default function TimerScreen({
   const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const seconds = String(secondsLeft % 60).padStart(2, "0");
 
+  const Container = embedded ? 'div' : 'main';
+  const Heading = embedded ? 'h2' : 'h1';
   return (
-    <main tabIndex={-1} id="main-content" className="screen timer-screen">
+    <Container tabIndex={embedded ? undefined : -1} id={embedded ? undefined : "main-content"} className={embedded ? "practice-session-screen" : "screen timer-screen"}>
       {parentJobId && <p className="analysis-notice" role="status">{retryEligibility===null?'Checking focused retry eligibility…':retryEligibility.eligible?'One focused coach assessment is available for this 60-second retry.':'Focused assessment is unavailable. Record and compare by listening, or use an available daily analysis.'}</p>}
-      <section className="timer-card speech-layout speaking-timer-page">
-        <header className="speech-heading"><h1 tabIndex={-1} className="destination-heading">{parentJobId?'Focused retry':'Speaking practice'}</h1>
+      <section className="timer-card speech-layout speaking-timer-page">{!embedded && <PracticeStages current="speak" includePreparation={includePreparation}/>}
+        <header className="speech-heading"><Heading tabIndex={-1} className="destination-heading">{parentJobId?'Focused retry':'Speaking practice'}</Heading>
           <p className="eyebrow">{parentJobId ? "FOCUSED RETRY" : fixedDuration && format==='daily-challenge' ? "DAILY CHALLENGE" : "YOUR SPEAKING PRACTICE"}</p>
           {debateSide && (
             <p className="m-0 text-sm font-semibold uppercase tracking-wider text-[#d0d2d4]">
@@ -128,6 +135,9 @@ export default function TimerScreen({
         />
 
       </section>
-    </main>
+    </Container>
   );
 }
+
+
+

@@ -1,3 +1,4 @@
+import PracticeStages from '../components/PracticeStages.jsx';
 import { useCallback, useState } from 'react';
 import SaveAudio from '../components/SaveAudio.jsx';
 import TakeComparison from '../components/TakeComparison.jsx';
@@ -5,6 +6,8 @@ import { lazy, Suspense } from 'react';
 const SpeechAnalysis = lazy(() => import('../components/SpeechAnalysis.jsx'));
 
 export default function SpeechReviewScreen({
+  embedded = false,
+  includePreparation = false,
   onRemoveSavedFeedback, onScore, user, onSignUp, onRetry, previousTake, focus, onResult, initialReport,
   topic,
   onSave,
@@ -14,12 +17,14 @@ export default function SpeechReviewScreen({
 }) {
   const [report,setReport]=useState(initialReport || null);
   const receiveReport=useCallback(value=>{setReport(value);onResult?.(value);},[onResult]);
+  const Container = embedded ? 'div' : 'main';
+  const Heading = embedded ? 'h2' : 'h1';
   return (
-    <main tabIndex={-1} id="main-content" className="screen timer-screen">
-      <section className="grid w-full max-w-2xl gap-5 rounded-[28px] border border-line bg-panel/95 p-5 text-left shadow-[0_32px_90px_rgba(0,0,0,0.4),inset_0_1px_rgba(255,255,255,0.04)] sm:p-8">
-        <header className="grid gap-2">
+    <Container tabIndex={embedded ? undefined : -1} id={embedded ? undefined : "main-content"} className={embedded ? "practice-session-screen" : "screen timer-screen"}>
+      <section className="practice-review-card grid w-full max-w-2xl gap-5 rounded-[28px] border border-line bg-panel/95 p-5 text-left shadow-[0_32px_90px_rgba(0,0,0,0.4),inset_0_1px_rgba(255,255,255,0.04)] sm:p-8">
+        {!embedded && <PracticeStages current="review" includePreparation={includePreparation}/>}<header className="grid gap-2">
           <p className="eyebrow">SPEECH COMPLETE</p>
-          <h1 className="m-0 text-3xl font-bold text-[#f3f5f7]">Review your practice</h1>
+          <Heading className="m-0 text-3xl font-bold text-[#f3f5f7]">Review your practice</Heading>
           <p className="timer-topic">{topic}</p>
         </header>
 
@@ -39,6 +44,9 @@ export default function SpeechReviewScreen({
           <p className="analysis-muted">Your star score saves automatically after analysis. Save progress keeps the date, topic and duration. Full feedback is included only if you choose to keep it. Audio is a separate choice above.</p>
         </div>
       </section>
-    </main>
+    </Container>
   );
 }
+
+
+

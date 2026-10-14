@@ -1,0 +1,3 @@
+#root .practice-session-screen{width:100%;padding:0;display:block;min-height:0;}
+#root .practice-session-content .timer-card,#root .practice-session-content .practice-review-card{width:100%;max-width:100%;margin:0;box-shadow:none;}
+#root .practice-session-content .practice-review-card{border-radius:14px;}

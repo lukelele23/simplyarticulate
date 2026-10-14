@@ -1,3 +1,5 @@
+import {introductionForLoad} from './lib/introduction.js';
+import PracticeFrame from './components/PracticeFrame.jsx';
 import useAppNavigation from './hooks/useAppNavigation.js';
 import { saveSpeechRating } from './lib/speechRating.js';
 import {sessionAccess} from './lib/authSecurity.js';
@@ -32,14 +34,17 @@ function getLocalDateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+const introductionAtPageLoad = (() => { try { return introductionForLoad(window.localStorage, performance.getEntriesByType("navigation")[0]?.type); } catch { return true; } })();
+
 export default function App() {
   const [user, setUser] = useState(null);
   const activeUserIdRef = useRef(undefined);
+  const microphoneScroll = useRef(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const {screen,setScreen,view,navigate,backLabel}=useAppNavigation();
   const [screenBeforeSignUp, setScreenBeforeSignUp] = useState("difficulty");
-  const [showIntroduction, setShowIntroduction] = useState(() => { try { return localStorage.getItem("sa-introduction-seen") !== "1"; } catch { return true; } });
+  const [showIntroduction, setShowIntroduction] = useState(introductionAtPageLoad);
   const dismissIntroduction = useCallback(() => { try { localStorage.setItem("sa-introduction-seen", "1"); } catch {} setShowIntroduction(false); }, []);
   const [practiceSkill, setPracticeSkill] = useState("Clarity");
   const [challengeId, setChallengeId] = useState(null);
@@ -116,7 +121,7 @@ export default function App() {
     return()=>{isActive=false;subscription.unsubscribe();};
   },[]);
 
-  useEffect(() => { window.scrollTo({top:0, behavior:"instant"}); const focus=()=>{const heading=document.querySelector("main h1");if(!heading)return false;heading.setAttribute("tabindex","-1");heading.focus({preventScroll:true});return true;};if(!focus()){const observer=new MutationObserver(()=>{if(focus())observer.disconnect();});observer.observe(document.getElementById("root"),{childList:true,subtree:true});return()=>observer.disconnect();} }, [screen,isAuthLoading]);
+  useEffect(() => { const savedScroll = screen === "timer" ? microphoneScroll.current : null; if (!savedScroll) { microphoneScroll.current = null; window.scrollTo({top:0, behavior:"instant"}); } const focus=()=>{if(savedScroll && !document.querySelector(".speaking-timer-page")) return false;const heading=document.querySelector("main h1");if(!heading)return false;heading.setAttribute("tabindex","-1");heading.focus({preventScroll:true});if(savedScroll)window.scrollTo({top:savedScroll.y,behavior:"instant"});return true;};if(!focus()){const observer=new MutationObserver(()=>{if(focus())observer.disconnect();});observer.observe(document.getElementById("root"),{childList:true,subtree:true});return()=>observer.disconnect();} }, [screen,isAuthLoading]);
 
   async function signInWithGoogle() {
     try{sessionStorage.setItem('sa-sign-in-return',history.state?.returnPath||'/home');}catch{}
@@ -278,7 +283,7 @@ export default function App() {
     );
   } else if (screen === "timer") {
     currentScreen = (
-      <TimerScreen
+      <TimerScreen embedded includePreparation={topicType !== 'debate' && settings.researchSeconds > 0}
         key={attempt}
         format={topicType}
         fixedDuration={Boolean(challengeId || previousTake)}
@@ -302,19 +307,19 @@ export default function App() {
     );
   } else if (screen === "research-timer") {
     currentScreen = (
-      <ResearchTimerScreen
+      <ResearchTimerScreen embedded
         difficulty={difficulty}
         topic={topic}
         debateSide={debateSide}
         secondsLeft={researchSecondsLeft}
         onSecondsLeftChange={setResearchSecondsLeft}
         onBack={() => setScreen("difficulty")}
-        onStartSpeaking={() => setScreen("timer")}
+        onStartSpeaking={() => { microphoneScroll.current = {y:window.scrollY,height:document.documentElement.scrollHeight}; setScreen("timer"); }}
       />
     );
   } else if (screen === "review") {
     currentScreen = (
-      <SpeechReviewScreen
+      <SpeechReviewScreen embedded includePreparation={topicType !== 'debate' && settings.researchSeconds > 0}
         onRemoveSavedFeedback={removeSavedFeedback}
         onScore={saveScore}
         user={user}
@@ -375,9 +380,12 @@ export default function App() {
     );
   }
 
+  if (["research-timer", "timer", "review"].includes(screen)) {
+    currentScreen = <PracticeFrame stage={screen === "research-timer" ? "prepare" : screen === "timer" ? "speak" : "review"} includePreparation={topicType !== "debate" && settings.researchSeconds > 0} user={user} onViewChange={nextView => navigate("/" + nextView)} onOpenSettings={() => setScreen("settings")} onSignUp={openSignUp}>{currentScreen}</PracticeFrame>;
+  }
   const introductionOpen = showIntroduction && !user && screen === "difficulty";
   return <>
-    <div inert={introductionOpen || undefined} aria-hidden={introductionOpen || undefined}>
+    <div style={screen === "timer" && microphoneScroll.current ? {minHeight:microphoneScroll.current.height} : undefined} inert={introductionOpen || undefined} aria-hidden={introductionOpen || undefined}>
     {(sessionSync.error || storageError || draftError) && <div className="storage-notice" role="alert">{storageError || draftError || sessionSync.error}{user && <button className="text-button" onClick={()=>{sessionSync.retry();setStorageError('');}}>Retry saving and sync</button>}</div>}
     <a className="skip-link" href="#main-content">Skip to content</a>
 <Suspense fallback={<main className="welcome-loading" role="status">Loading your practice space…</main>}>{currentScreen}</Suspense>
@@ -385,6 +393,10 @@ export default function App() {
     {introductionOpen && <Suspense fallback={null}><div className="introduction-overlay"><SplashScreen onDismiss={() => { dismissIntroduction(); navigate("/home"); }} onExplore={() => { dismissIntroduction(); navigate("/home"); }} onGoogleSignIn={async () => { await signInWithGoogle(); dismissIntroduction(); }} error={authError || draftError} onTryDemo={(prompt) => { dismissIntroduction(); setDifficulty("easy"); setTopicType("speech"); setTopic(prompt); setResearchSecondsLeft(0); setScreen("timer"); }} /></div></Suspense>}
   </>;
 }
+
+
+
+
 
 
 

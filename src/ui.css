@@ -216,3 +216,49 @@
 #root .app-nav nav button[aria-current="page"]:hover{background:#dedfe0;border-color:#dedfe0;}
 #root .app-nav nav button:active{background:#aeb1b4;color:#202224;}
 @media(prefers-reduced-motion:reduce){#root .app-nav nav button{transition:none;}}
+
+#root .practice-stages{width:100%;margin:0 0 18px;}
+#root .practice-stages ol{display:flex;gap:8px;list-style:none;padding:0;margin:0;}
+#root .practice-stages li{display:flex;align-items:center;gap:7px;flex:1;min-width:0;padding:10px 8px;border-bottom:2px solid #404244;color:#b9bbbd;font-size:12px;}
+#root .practice-stages li[aria-current="step"]{border-color:#c7c9cb;color:#f3f5f7;font-weight:600;}
+#root .practice-stage-number{display:grid;place-items:center;width:23px;height:23px;flex-shrink:0;border:1px solid #51555a;border-radius:50%;font-size:11px;}
+#root [aria-current="step"] .practice-stage-number{background:#c7c9cb;border-color:#c7c9cb;color:#202224;}
+#root .is-complete .practice-stage-number{color:#f3f5f7;}
+#root .practice-grid,#root .practice-grid.is-settings-open{grid-template-columns:minmax(0,1fr);gap:12px;}
+#root .practice-grid>.practice-setup{padding:10px 14px;gap:12px;}
+#root .practice-settings-heading,#root .is-settings-open .practice-settings-heading{flex-direction:row;align-items:center;gap:12px;}
+#root .practice-settings-summary p{margin:0;font-size:13px;opacity:1;}
+#root .practice-grid>.prompt-workspace{padding-top:10px;}
+@media(min-width:1000px){#root .is-settings-open .practice-settings-content{grid-template-columns:1fr 1fr;gap:24px;}}
+@media(max-width:400px){#root .practice-stages ol{gap:4px;}#root .practice-stages li{padding:8px 2px;gap:4px;font-size:11px;}#root .practice-stage-number{width:20px;height:20px;}}
+
+/* Minimal practice chrome: labels, quiet dots and one settings divider. */
+#root .practice-stages{margin:0 0 8px;}
+#root .practice-stages ol{gap:20px;flex-wrap:wrap;}
+#root .practice-stages li{flex:0 0 auto;gap:6px;padding:4px 0;border:0;font-size:12px;line-height:1.5;color:#92989e;}
+#root .practice-stages li[aria-current="step"]{color:#f3f5f7;font-weight:600;}
+#root .practice-stage-dot{width:5px;height:5px;border-radius:50%;background:#51555a;flex-shrink:0;}
+#root [aria-current="step"] .practice-stage-dot{background:#c7c9cb;box-shadow:0 0 0 3px #c7c9cb12;}
+#root .is-complete .practice-stage-dot{background:#9da1a3;}
+#root .practice-grid>.practice-setup{padding:0 0 8px;gap:10px;border:0;border-bottom:1px solid #404244;border-radius:0;background:transparent;}
+#root .practice-settings-summary p{font-size:12px;color:#b9bbbd;line-height:1.5;}
+#root .practice-settings-toggle{background:transparent;border:0;padding:8px 4px;min-height:44px;font-size:12px;color:#d0d2d4;gap:6px;}
+#root .practice-settings-toggle:hover:not(:disabled){background:transparent;color:#f3f5f7;text-decoration:underline;text-underline-offset:4px;}
+#root .practice-settings-chevron{font-size:12px;}
+#root .practice-settings-content{padding:14px;border:1px solid #404244;border-radius:10px;background:#262c33;}
+#root .practice-settings-content[hidden]{display:none;}
+#root .practice-grid>.prompt-workspace{padding-top:6px;}
+@media(max-width:400px){#root .practice-stages ol{gap:14px;}#root .practice-stages li{gap:5px;padding:4px 0;font-size:11px;}}
+
+#root .destination-topline.has-practice-stages{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:28px 0 20px;}
+#root .has-practice-stages .destination-heading{margin:0;}
+#root .has-practice-stages .practice-stages{width:auto;margin:0;flex-shrink:0;}
+#root .has-practice-stages .practice-stages ol{justify-content:flex-end;}
+#root .practice-settings-toggle{min-width:44px;min-height:44px;padding:8px 10px;border:1px solid #51555a;border-radius:4px;background:transparent;}
+#root .practice-settings-toggle:hover:not(:disabled){background:#262c33;border-color:#7a7f85;text-decoration:none;}
+@media(max-width:600px){
+ #root .destination-topline.has-practice-stages{gap:12px;flex-wrap:wrap;margin:22px 0 16px;}
+ #root .has-practice-stages .destination-heading{font-size:28px;}
+ #root .has-practice-stages .practice-stages{margin-left:auto;}
+ #root .has-practice-stages .practice-stages ol{gap:12px;}
+}

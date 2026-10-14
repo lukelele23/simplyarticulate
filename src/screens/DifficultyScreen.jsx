@@ -1,3 +1,4 @@
+import PracticeStages from '../components/PracticeStages.jsx';
 import RecoveryTakes from '../components/RecoveryTakes.jsx';
 import StatsScreen from './StatsScreen.jsx';
 import DailyChallengeLeaderboard from '../components/DailyChallengeLeaderboard.jsx';
@@ -7,7 +8,7 @@ import Tabs from "../components/Tabs.jsx";
 import WheelSelector from "../components/WheelSelector.jsx";
 import PracticeSettings from "../components/PracticeSettings.jsx";
 import DailyChallengeScreen from "./DailyChallengeScreen.jsx";
-import SubscriptionSurvey from '../components/SubscriptionSurvey.jsx';
+import MainNavigation from '../components/MainNavigation.jsx';
 
 const SpeechDebateSection = lazy(() => import("../components/SpeechDebateSection.jsx"));
 
@@ -25,8 +26,8 @@ export default function DifficultyScreen({ onRemoveSavedFeedback, onRecover, onS
   const feedback = sessions.find(s => s.analysis?.coaching);
   return <main tabIndex={-1} id="main-content" className="screen difficulty-screen">
     <section className="generator-card app-shell">
-      <header className="app-nav"><span className="wordmark">SimplyArticulate</span><nav aria-label="Main navigation"><button aria-current={view==='home'?'page':undefined} onClick={()=>setView('home')}>Home</button><button aria-current={view==='daily-challenge'?'page':undefined} onClick={()=>setView('daily-challenge')}>Daily Challenge</button><button aria-current={view==='practice'?'page':undefined} onClick={()=>setView('practice')}>Practice</button><button aria-current={view==='progress'?'page':undefined} onClick={()=>setView('progress')}>Progress</button><button aria-current={view==='speech-debate'?'page':undefined} onClick={()=>setView('speech-debate')}>Speech &amp; Debate</button></nav><span className="nav-scroll-hint" aria-hidden="true">Swipe the tabs for more sections →</span><button className="secondary-button nav-account" onClick={isAuthenticated?onOpenSettings:onSignUp}>{isAuthenticated?<><span aria-hidden="true">⚙︎</span><span>Settings</span></>:'Sign in'}</button><SubscriptionSurvey user={user} onSignUp={onSignUp}/></header>
-      <div key={view} className="view-enter"><h1 ref={heading} tabIndex={-1} className="destination-heading">{titles[view]}</h1>
+      <MainNavigation view={view} onViewChange={setView} isAuthenticated={isAuthenticated} onOpenSettings={onOpenSettings} onSignUp={onSignUp} user={user}/>
+      <div key={view} className="view-enter"><div className={`destination-topline${view === 'practice' ? ' has-practice-stages' : ''}`}><h1 ref={heading} tabIndex={-1} className="destination-heading">{titles[view]}</h1>{view === 'practice' && <PracticeStages current="topic" includePreparation={topicType !== 'debate' && settings.researchSeconds > 0}/>}</div>
       {view==='home' ? <>
         <RecoveryTakes user={user} onRecover={onRecover} />
         <section className="practice-invitation"><h2>{topic?'Resume your practice':'One idea. One minute.'}</h2><p>{sessions.find(s=>s.nextFocus)?.nextFocus || nextStep(feedback?.analysis) || 'Practice a clear answer, get one useful correction, and try again.'}</p><button className="primary-button" onClick={()=>setView('practice')}>{topic?'Resume practice':'Start a practice'}</button></section>
@@ -53,11 +54,15 @@ export default function DifficultyScreen({ onRemoveSavedFeedback, onRecover, onS
         </Suspense>
       </> : <>
         <RecoveryTakes user={user} onRecover={onRecover} />
-        <div className={`practice-grid${practiceSettingsExpanded ? ' is-settings-open' : ''}`}><section className={`practice-setup${practiceSettingsExpanded ? '' : ' is-collapsed'}`} aria-label="Practice settings"><div className="practice-settings-heading"><div className="practice-settings-summary"><h2>Practice settings</h2><p>{topicType === 'debate' ? 'Debate' : topicType === 'research' ? 'Research' : 'Speech'} · {difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'Choose difficulty'} · {settings.speechSeconds < 60 ? `${settings.speechSeconds} sec` : `${settings.speechSeconds / 60} min`} speaking</p></div><button className="practice-settings-toggle" type="button" aria-expanded={practiceSettingsExpanded} aria-controls="practice-settings-content" onClick={() => setPracticeSettingsExpanded((expanded) => !expanded)}><span>{practiceSettingsExpanded ? "Hide settings" : "Show settings"}</span><span className="practice-settings-chevron" aria-hidden="true">⌄</span></button></div><div id="practice-settings-content" className="practice-settings-content" hidden={!practiceSettingsExpanded}><Tabs difficulty={difficulty} onDifficultyChange={onDifficultyChange} topicType={topicType} onTopicTypeChange={onTopicTypeChange}/><PracticeSettings topicType={topicType} settings={settings} onSettingsChange={onSettingsChange}/></div></section><section className="prompt-workspace"><h2>{topic ? 'Your topic' : 'Choose a topic'}</h2>{difficulty ? <WheelSelector skill={practiceSkill} difficulty={difficulty} topicType={topicType} previousTopic={topic} onSelectTopic={onTopicSelect} onContinueToResearch={onContinueToResearch} /> : <p className="home-panel">Choose a difficulty to find your next topic.</p>}<button className="text-button" onClick={onReset}>Reset this session</button></section></div>
+        <div className={`practice-grid${practiceSettingsExpanded ? ' is-settings-open' : ''}`}><section className={`practice-setup${practiceSettingsExpanded ? '' : ' is-collapsed'}`} aria-label="Practice settings"><div className="practice-settings-heading"><div className="practice-settings-summary"><h2 className="sr-only">Practice settings</h2><p>{topicType === 'debate' ? 'Debate' : topicType === 'research' ? 'Research' : 'Speech'} · {difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'Choose difficulty'} · {settings.speechSeconds < 60 ? `${settings.speechSeconds} sec` : `${Math.floor(settings.speechSeconds / 60)} min${settings.speechSeconds % 60 ? ` ${settings.speechSeconds % 60} sec` : ''}`}</p></div><button className="practice-settings-toggle" type="button" aria-expanded={practiceSettingsExpanded} aria-label={practiceSettingsExpanded ? "Close practice settings" : "Edit practice settings"} aria-controls="practice-settings-content" onClick={() => setPracticeSettingsExpanded((expanded) => !expanded)}><span>{practiceSettingsExpanded ? "Done" : "Edit"}</span></button></div><div id="practice-settings-content" className="practice-settings-content" hidden={!practiceSettingsExpanded}><Tabs difficulty={difficulty} onDifficultyChange={onDifficultyChange} topicType={topicType} onTopicTypeChange={onTopicTypeChange}/><PracticeSettings topicType={topicType} settings={settings} onSettingsChange={onSettingsChange}/></div></section><section className="prompt-workspace"><h2>{topic ? 'Your topic' : 'Choose a topic'}</h2>{difficulty ? <WheelSelector skill={practiceSkill} difficulty={difficulty} topicType={topicType} previousTopic={topic} onSelectTopic={onTopicSelect} onContinueToResearch={onContinueToResearch} /> : <p className="home-panel">Choose a difficulty to find your next topic.</p>}<button className="text-button" onClick={onReset}>Reset this session</button></section></div>
       </>}
       </div><footer className="app-footer"><span>SimplyArticulate</span></footer>
     </section>
   </main>;
 }
+
+
+
+
 
 
