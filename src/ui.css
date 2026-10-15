@@ -276,3 +276,56 @@
 @keyframes settings-label-change{from{opacity:.4;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
 @media(max-width:400px){#root .practice-summary-segments>.practice-summary-segment{padding:6px;font-size:11px;}#root .practice-summary-segment>.practice-summary-label{font-size:9px;}}
 @media(prefers-reduced-motion:reduce){#root .practice-summary-value{animation:none;}}
+
+/* Minimal countdown with a slim remaining-time track. */
+#root :is(.preparation-timer-page,.speaking-timer-page) .speaking-timer-hero{gap:14px;padding:22px 16px;border:1px solid #3d444b;border-radius:16px;background:rgba(255,255,255,.015);box-shadow:none;}
+#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring{box-sizing:border-box;width:min(240px,100%);height:auto;aspect-ratio:auto;gap:0;margin:0 auto 4px;padding:18px 20px!important;border:1px solid #515860!important;border-radius:12px;outline:none;background:rgba(255,255,255,.025)!important;box-shadow:none!important;}
+#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring span{font-size:52px!important;font-weight:400!important;line-height:1.1;letter-spacing:-.045em;font-variant-numeric:tabular-nums lining-nums;color:#f3f5f7;}
+#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring small{max-width:100%;margin-top:10px;font-size:10px;font-weight:400;line-height:1.5;letter-spacing:.12em;color:#b9bbbd;text-align:center;}
+#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring::after{content:'';display:block;width:100%;height:3px;margin-top:18px;border-radius:2px;background:linear-gradient(to right,#c7c9cb var(--progress),#41474e var(--progress));}
+#root .preparation-timer-page .preparation-ring::after{opacity:.7;}
+#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring.complete small{color:#d0d2d4;}
+@media(max-width:540px){#root :is(.preparation-timer-page,.speaking-timer-page) .speaking-timer-hero{padding:18px 14px;}#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring{width:min(220px,100%);}#root :is(.preparation-timer-page,.speaking-timer-page) .speech-ring span{font-size:44px!important;}}
+/* Dense Practice layout; controls retain a 44px touch target. */
+#root .compact-practice{padding:16px 20px;}
+#root .compact-practice .app-nav{padding-bottom:10px;row-gap:8px;}
+#root .compact-practice .destination-topline.has-practice-stages{margin:14px 0 12px;gap:10px;}
+#root .compact-practice .destination-heading{font-size:clamp(24px,3vw,30px);line-height:1.2;}
+#root .compact-practice .practice-stages ol{gap:12px;}
+#root .compact-practice .practice-stages li{font-size:11px;padding:2px 0;}
+#root .compact-practice .practice-grid{gap:8px;}
+#root .compact-practice .practice-settings-heading{gap:8px;}
+#root .compact-practice .practice-summary-segments>.practice-summary-segment{padding:4px 10px;gap:0;}
+#root .compact-practice .practice-settings-content{padding:12px;gap:12px;}
+#root .compact-practice .practice-grid>.prompt-workspace{padding-top:0;}
+#root .compact-practice .prompt-workspace>h2{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+#root .compact-practice .topic-generator{gap:8px;}
+#root .compact-practice .topic-display-viewport{--topic-height:120px;border-radius:10px;}
+#root .compact-practice :is(.topic-result-card,.topic-empty-state,.topic-reel-item){padding:14px 18px;gap:8px;font-size:clamp(16px,1.8vw,20px);line-height:1.45;}
+#root .compact-practice .topic-result-label{font-size:9px;}
+#root .compact-practice .topic-selection-status{margin:4px 0 0;min-height:16px;font-size:11px;line-height:1.4;}
+#root .compact-practice .topic-actions{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;margin-top:4px;}
+#root .compact-practice .topic-actions>button{min-height:44px;width:auto;padding:10px 16px;font-size:13px;flex:1 1 150px;}
+#root .compact-practice .topic-side-control{margin:4px 0;padding:8px 12px;}
+#root .compact-practice .app-footer{margin-top:20px;padding:14px 0;gap:10px;}
+#root .compact-practice .speech-layout{gap:14px;padding:16px;}
+#root .compact-practice .speech-heading{gap:6px;margin:0;}
+#root .compact-practice .speech-heading .timer-topic{margin:0;font-size:16px;line-height:1.5;}
+#root .compact-practice .speaking-timer-hero{padding:14px;gap:10px;}
+#root .compact-practice .speech-ring{padding:12px 16px!important;}
+#root .compact-practice .speech-ring::after{margin-top:12px;}
+@media(max-width:540px){#root .compact-practice{padding:12px;}#root .compact-practice .destination-topline.has-practice-stages{margin:12px 0 10px;gap:6px;}#root .compact-practice .practice-stages ol{gap:10px;}#root .compact-practice .practice-summary-segments>.practice-summary-segment{padding:4px 6px;font-size:11px;}#root .compact-practice .topic-display-viewport{--topic-height:140px;}#root .compact-practice .topic-actions>button{flex:1 1 110px;padding:9px 10px;font-size:12px;}#root .compact-practice .speech-layout{padding:12px;}}
+
+/* Softer Practice shapes without nested square frames. */
+#root .compact-practice .topic-display-viewport{border-radius:24px;border-color:#515860;}
+#root .compact-practice .practice-settings-summary .practice-summary-segments{border-radius:999px;}
+#root .compact-practice .practice-settings-toggle{border-radius:999px;padding-inline:14px;}
+#root .compact-practice .practice-settings-content{border-radius:20px;}
+#root .compact-practice .topic-actions>button{border-radius:999px;}
+#root .compact-practice .practice-session-content :is(.speaking-timer-page,.preparation-timer-page){border-radius:28px;}
+#root .compact-practice :is(.speaking-timer-page,.preparation-timer-page) .speaking-timer-hero{border:0;background:transparent;padding-inline:6px;border-radius:0;}
+#root .compact-practice :is(.speaking-timer-page,.preparation-timer-page) .speech-ring{border:0!important;border-radius:0;background:none!important;padding:8px 16px!important;}
+#root .compact-practice :is(.speaking-timer-page,.preparation-timer-page) .speech-controls>button{border-radius:999px;}
+#root .compact-practice .speaking-timer-page .speech-recorder{border:0;border-top:1px solid #515860;border-radius:0;background:transparent;padding:12px 0 0;}
+#root .compact-practice .speaking-timer-page .microphone-check>button{border-radius:999px;}
+@media(max-width:540px){#root .compact-practice .topic-display-viewport{border-radius:20px;}#root .compact-practice .practice-session-content :is(.speaking-timer-page,.preparation-timer-page){border-radius:24px;}}

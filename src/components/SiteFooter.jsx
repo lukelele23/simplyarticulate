@@ -1,0 +1,1 @@
+export default function SiteFooter(){return <footer className="app-footer"><span>SimplyArticulate</span><nav aria-label="Information"><a href="/about/">How it works</a><a href="/guides/">Practice guides</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms</a><a href="/support/">Help</a></nav></footer>;}

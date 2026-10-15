@@ -1,0 +1,20 @@
+/* Focused recording card with explicit, high-contrast surfaces. */
+#root .speaking-timer-page.timer-card,#root .practice-session-content .speaking-timer-page.timer-card{box-sizing:border-box;width:100%;max-width:560px;margin-inline:auto;justify-self:center;grid-template-columns:minmax(0,1fr);gap:14px;padding:18px;background:#262729;}
+#root .speaking-timer-page .speech-heading{width:100%;min-width:0;text-align:center;}
+#root .speaking-timer-page .speech-heading .destination-heading{margin:0;font-size:24px;}
+#root .speaking-timer-page .speech-heading .eyebrow{color:#c7cdd3;font-size:11px;line-height:1.5;margin:0;}
+#root .speaking-timer-page .speaking-timer-hero{box-sizing:border-box;width:100%;padding:14px;background:#262729;}
+#root .speaking-timer-page .speech-ring{background:#262729!important;}
+#root .speaking-timer-page .speech-ring small,#root .speaking-timer-page .countdown-choice,#root .speaking-timer-page .recording-status{color:#c7cdd3;}
+#root .speaking-timer-page .secondary-button{background:#30363d;color:#f3f5f7;border-color:#89929b;}
+#root .speaking-timer-page .secondary-button:hover:not(:disabled){background:#40474f;color:#fff;}
+#root .speaking-timer-page .start-button{background:#c7c9cb;color:#202224;border-color:#c7c9cb;flex-wrap:wrap;}
+#root .speaking-timer-page .recording-key-hint{padding:2px 5px;border:1px solid currentColor;border-radius:4px;font-family:inherit;font-size:10px;line-height:1.3;letter-spacing:.02em;}
+#root .speaking-timer-page .speech-recorder{box-sizing:border-box;min-width:0;padding:12px;gap:8px;}
+#root .speaking-timer-page .speech-recorder p{margin:0;font-size:12px;line-height:1.5;}
+#root .speaking-timer-page :is(button,a,input):focus-visible{outline:2px solid #f3f5f7;outline-offset:3px;}
+@media(max-width:540px){#root .speaking-timer-page.timer-card,#root .practice-session-content .speaking-timer-page.timer-card{padding:12px;}#root .speaking-timer-page .speech-heading .destination-heading{font-size:22px;}}
+
+/* Keep keyboard hints on desktop; touch users retain the recording buttons. */
+@media(max-width:767px){#root .speaking-timer-page .recording-key-hint{display:none;}}
+@media(hover:none) and (pointer:coarse){#root .speaking-timer-page .recording-key-hint{display:none;}}

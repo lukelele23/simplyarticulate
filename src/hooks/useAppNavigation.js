@@ -1,7 +1,9 @@
 import {useCallback,useEffect,useState,useRef} from 'react';
+import usePageMetadata from './usePageMetadata.js';
 import {routeFor,screenPaths} from '../lib/navigation.js';
 export default function useAppNavigation(){
  const [route,setRoute]=useState(()=>routeFor(location.pathname));
+ usePageMetadata(route.screen,route.view);
  const previous=useRef(history.state?.returnPath||'/home');
  const navigate=useCallback((path,replace=false)=>{
   const old=routeFor(location.pathname);

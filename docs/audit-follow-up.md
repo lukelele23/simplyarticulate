@@ -1,0 +1,9 @@
+# Audit fixes and remaining verification
+
+Implemented: guest selected duration honored; contextual Progress sign-in; real navigation anchors; clear introduction copy; no unfinished ad placements; meaningful empty leaderboard; public about, privacy, terms, support and practice guides; crawler files and ads.txt; route metadata, canonical and social tags; static public information; real server 404 fallback; versioned asset caching; frame and permission restrictions; report-only CSP; larger supporting labels and stage-dot contrast; focus management in the session frame; recorder state announcements without elapsed-second chatter.
+
+Support/privacy contact provided by the owner: simplyarticulate11@gmail.com. The pages describe observed product behavior, not a legal compliance certification. Before a public launch, confirm the operator's legal identity/address, applicable age rules, deployed provider agreements, retention/backups/logging and jurisdiction-specific privacy obligations with qualified advice. No unsupported guarantees about provider deletion or retention were added.
+
+Not done automatically: publish or change remote settings; activate AdSense; collect marketing analytics or run an A/B test; fabricate proof/testimonials; choose pricing; perform destructive live account tests; assert WCAG certification or a penetration-test result. Every-fourth-refresh introduction was retained because it was explicitly requested.
+
+Next verification: disposable-account sign-in, analysis and retry, cross-device sync, offline conflict recovery, transcript withdrawal and staged deletion; NVDA/VoiceOver and browser zoom; mobile field performance; CSP violation review before enforcement. Upload sitemap through Search Console after deployment. Tune ad units and a regional consent flow only before ad activation. Validate the audience and paid value through actual user interviews and retention measurements.

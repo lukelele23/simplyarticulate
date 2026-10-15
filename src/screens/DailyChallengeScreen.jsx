@@ -1,4 +1,5 @@
 import TopicVotingScreen from './TopicVotingScreen.jsx';
+import './dailyChallengeFocus.css';
 import SaveAudio from '../components/SaveAudio.jsx';
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import SpeechRecorder from "../components/SpeechRecorder.jsx";
@@ -245,7 +246,7 @@ export default function DailyChallengeScreen({
   }
 
   return (
-    <section className="timer-card daily-card daily-single-page">
+    <section className={`timer-card daily-card daily-single-page${challengeStarted && !recording ? " is-timing" : ""}`}>
       <header className="daily-page-heading">
         <nav className="daily-section-nav" aria-label="Daily Challenge sections">
           {[['challenge','Challenge'],['leaderboard','Leaderboard'],['topic-vote','Topic Vote']].map(([view,label])=><button

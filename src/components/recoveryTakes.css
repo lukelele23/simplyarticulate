@@ -1,0 +1,20 @@
+#root .recovery-takes{padding:20px;border:1px solid #454c54;border-radius:14px;background:var(--ui-surface,#252c33);margin-bottom:16px;text-align:left;}
+#root .recovery-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;}
+#root .recovery-heading h2{margin:0;font-size:19px;line-height:1.35;font-weight:500;letter-spacing:-.02em;}
+#root .recovery-heading p{margin:6px 0 0;color:#aeb5bc;font-size:12px;line-height:1.5;}
+#root .recovery-count,#root .recovery-take-status{flex-shrink:0;padding:4px 8px;border:1px solid #4b535c;border-radius:6px;color:#bec5cc;font-size:11px;line-height:1.4;}
+#root .recovery-list{display:grid;gap:10px;}
+#root .recovery-take{padding:16px;border:1px solid #414850;border-radius:10px;background:#ffffff03;}
+#root .recovery-take-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+#root .recovery-take-heading>div{min-width:0;}
+#root .recovery-take h3{margin:0;font-size:15px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;}
+#root .recovery-take-heading p{margin:5px 0 0;font-size:12px;color:#aeb5bc;line-height:1.5;font-variant-numeric:tabular-nums;}
+#root .recovery-take-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px;}
+#root .recovery-take-actions :is(button,a){min-height:44px;width:auto;padding:9px 12px;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+#root .recovery-take-actions .recovery-remove{margin-left:auto;color:#b9bbbd;}
+#root .recovery-audio{margin-top:14px;}
+#root .recovery-audio audio{display:block;width:100%;height:40px;}
+#root .recovery-confirm{margin-top:14px;padding:12px;border:1px solid #66605a;border-radius:8px;}
+#root .recovery-confirm p,#root .recovery-error p,#root .recovery-audio p{margin:0;font-size:12px;line-height:1.6;}
+#root .recovery-show-more{margin-top:12px;min-height:44px;}
+@media(max-width:540px){#root .recovery-takes{padding:14px;}#root .recovery-take{padding:12px;}#root .recovery-take-heading{flex-direction:column;gap:8px;}#root .recovery-take-actions{gap:6px;}#root .recovery-take-actions .recovery-remove{margin-left:0;}}

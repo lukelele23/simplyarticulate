@@ -1,3 +1,5 @@
+import {recordingShortcut} from '../lib/recordingShortcut.js';
+import './recordingScreen.css';
 import PracticeStages from '../components/PracticeStages.jsx';
 import {analysisRequest} from '../lib/speechAnalysis.js';
 import { useEffect, useRef, useState } from "react";
@@ -30,6 +32,9 @@ export default function TimerScreen({
   const [hasEverStarted, setHasEverStarted] = useState(false);
   const [recordingBusy, setRecordingBusy] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const clearRef = useRef(false);
+  const [clearMessage, setClearMessage] = useState('');
   const deadlineRef = useRef(0);
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export default function TimerScreen({
   }, [secondsLeft]);
 
   async function startSpeaking() {
-    if (isStarting || recordingBusy) return;
+    if (isStarting || recordingBusy || clearRef.current) return;
     setIsStarting(true);
     try {
       const recordingStarted = await recorderRef.current?.start();
@@ -77,7 +82,7 @@ export default function TimerScreen({
   }
 
   async function finishSpeaking() {
-    if (finishRef.current) return;
+    if (finishRef.current || clearRef.current) return;
     finishRef.current = true;
     setHasStarted(false);
     setRecordingBusy(true);
@@ -85,6 +90,39 @@ export default function TimerScreen({
     onFinish(recording || null);
   }
 
+  async function clearAttempt() {
+    if (isStarting || clearRef.current || finishRef.current) return;
+    clearRef.current = true;
+    setIsClearing(true);
+    setHasStarted(false);
+    setClearMessage('');
+    try {
+      const cleared = await recorderRef.current?.clear();
+      if (!cleared) return;
+      deadlineRef.current = 0;
+      finishRef.current = false;
+      setSecondsLeft(Math.min(durationSeconds, 300));
+      setHasEverStarted(false);
+      setRecordingBusy(false);
+      onClipChange?.(null);
+      setClearMessage('Attempt cleared. Ready for a fresh take.');
+    } finally {
+      clearRef.current = false;
+      setIsClearing(false);
+    }
+  }
+  useEffect(() => {
+    function onKeyDown(event) {
+      const action=recordingShortcut(event,{secondsLeft,running:hasStarted,started:hasEverStarted,fixedDuration,blocked:isStarting||isClearing||finishRef.current||(!hasEverStarted&&recordingBusy)});
+      if(!action)return;
+      event.preventDefault();
+      if(action==='start')void startSpeaking();
+      else if(action==='pause')pauseSpeaking();
+      else resumeSpeaking();
+    }
+    window.addEventListener('keydown',onKeyDown);
+    return()=>window.removeEventListener('keydown',onKeyDown);
+  });
   const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const seconds = String(secondsLeft % 60).padStart(2, "0");
 
@@ -94,7 +132,7 @@ export default function TimerScreen({
     <Container tabIndex={embedded ? undefined : -1} id={embedded ? undefined : "main-content"} className={embedded ? "practice-session-screen" : "screen timer-screen"}>
       {parentJobId && <p className="analysis-notice" role="status">{retryEligibility===null?'Checking focused retry eligibility…':retryEligibility.eligible?'One focused coach assessment is available for this 60-second retry.':'Focused assessment is unavailable. Record and compare by listening, or use an available daily analysis.'}</p>}
       <section className="timer-card speech-layout speaking-timer-page">{!embedded && <PracticeStages current="speak" includePreparation={includePreparation}/>}
-        <header className="speech-heading"><Heading tabIndex={-1} className="destination-heading">{parentJobId?'Focused retry':'Speaking practice'}</Heading>
+        <header className="speech-heading"><Heading tabIndex={-1} className="destination-heading">{parentJobId?'Focused retry':'Your recording'}</Heading>
           <p className="eyebrow">{parentJobId ? "FOCUSED RETRY" : fixedDuration && format==='daily-challenge' ? "DAILY CHALLENGE" : "YOUR SPEAKING PRACTICE"}</p>
           {debateSide && (
             <p className="m-0 text-sm font-semibold uppercase tracking-wider text-[#d0d2d4]">
@@ -113,15 +151,17 @@ export default function TimerScreen({
           </div>
           <label className="countdown-choice"><input type="checkbox" checked={showCountdown} onChange={e=>setShowCountdown(e.target.checked)} /> Show countdown</label>
           {secondsLeft === 0 ? (
-            <button className="primary-button" onClick={finishSpeaking} disabled={recordingBusy}>Review speech and feedback</button>
+            <button className="primary-button" onClick={finishSpeaking} disabled={recordingBusy || isClearing}>Review speech and feedback</button>
           ) : (
             <>
-              {!hasStarted && <button className="start-button" onClick={hasEverStarted ? resumeSpeaking : startSpeaking} disabled={isStarting}>{isStarting ? "Starting microphone…" : hasEverStarted ? "Resume speaking and recording" : "Start speaking and recording"}</button>}
-              {hasStarted && !fixedDuration && <button className="secondary-button" onClick={pauseSpeaking}>Pause speaking and recording</button>}
-              {hasEverStarted && <button className="secondary-button" onClick={finishSpeaking} disabled={isStarting || finishRef.current}>Finish and review speech</button>}
-              <button className="secondary-button" onClick={onBack} disabled={recordingBusy}>{backLabel}</button>
+              {!hasStarted && <button className="start-button" aria-keyshortcuts="Space" onClick={hasEverStarted ? resumeSpeaking : startSpeaking} disabled={isStarting || isClearing}>{isStarting ? "Starting microphone…" : hasEverStarted ? "Resume speaking and recording" : "Start speaking and recording"}{!isStarting && <kbd className="recording-key-hint" aria-hidden="true">Space</kbd>}</button>}
+              {hasStarted && !fixedDuration && <button className="secondary-button" aria-keyshortcuts="Space" onClick={pauseSpeaking} disabled={isClearing}>Pause speaking and recording <kbd className="recording-key-hint" aria-hidden="true">Space</kbd></button>}
+              {hasEverStarted && <button className="secondary-button" onClick={finishSpeaking} disabled={isStarting || isClearing || finishRef.current}>Finish and review speech</button>}
+              {!recordingBusy && !isClearing && <button className="secondary-button" onClick={onBack}>{backLabel}</button>}
             </>
           )}
+          <button type="button" className="text-button clear-attempt-button" onClick={clearAttempt} disabled={!hasEverStarted || isStarting || isClearing || finishRef.current}>{isClearing ? "Clearing…" : "Clear attempt"}</button>
+          {clearMessage && <p className="analysis-muted" role="status">{clearMessage}</p>}
         </div>
 
         <SpeechRecorder

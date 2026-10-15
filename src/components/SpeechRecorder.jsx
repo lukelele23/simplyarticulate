@@ -1,6 +1,6 @@
 import { audioCapture } from '../lib/audioCapture.js';
 import MicrophoneCheck from './MicrophoneCheck.jsx';
-import { saveDraft } from '../lib/drafts.js';
+import { saveDraft, removeDraft } from '../lib/drafts.js';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 import { pcmWave } from "../lib/audio.js";
@@ -197,13 +197,40 @@ const SpeechRecorder = forwardRef(function SpeechRecorder(
     return Promise.resolve(clip ? { blob: clip.blob, storageBlob:clip.storageBlob, durationSeconds: clip.seconds,draftId:draftId.current,requestKey:draftId.current,recordedAt:recordedAt.current } : null);
   }
 
-  useImperativeHandle(ref, () => ({ start, pause, resume, stop }));
+  async function clear() {
+    if (status === 'requesting') return false;
+    try {
+      await stop();
+      await draftWrites.current;
+      if (draftId.current) await removeDraft(draftId.current);
+      draftId.current = null;
+      recordedAt.current = null;
+      recorder.current = null;
+      stopPromise.current = null;
+      resolveStop.current = null;
+      recordedMilliseconds.current = 0;
+      activeSegmentStartedAt.current = 0;
+      operation.current = false;
+      setClip(null);
+      setElapsed(0);
+      setError('');
+      setStatus('idle');
+      onClipChange?.(null);
+      return true;
+    } catch {
+      setError('This attempt could not be cleared. Your recording is still available; try again.');
+      return false;
+    }
+  }
+
+  useImperativeHandle(ref, () => ({ start, pause, resume, stop, clear }));
 
 
   return (
     <section className="speech-recorder" aria-label="Speech recording">
       <MicrophoneCheck disabled={busy}/>
-      <p className="recording-status" role="status">
+      <p className="sr-only" role="status">{status === "recording" ? "Recording started" : status === "paused" ? "Recording paused" : status === "requesting" ? "Waiting for microphone permission" : status === "stopping" ? "Finishing recording" : clip ? "Recording ready to replay" : "Microphone not checked"}</p>
+      <p className="recording-status" aria-live="off">
         {status === "recording" ? `Microphone recording · ${elapsed}s` : status === "paused" ? `Recording paused · ${elapsed}s` : status === "requesting" ? "Waiting for microphone permission…" : status === "stopping" ? "Finishing recording…" : clip ? `Recording ready · ${clip.seconds}s` : "Microphone not checked · permission is requested when you start"}
       </p>
       {showPlayback && url && !busy && <audio className="recording-player" controls controlsList="nodownload" src={url}>Your browser does not support audio playback.</audio>}

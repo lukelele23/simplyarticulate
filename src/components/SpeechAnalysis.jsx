@@ -196,8 +196,6 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           </>}
         </>
       )}
-      <p className="analysis-muted">Analyze sends this recording for private transcription and speech coaching.</p>
-      <details className="analysis-disclosure"><summary>How your recording is processed</summary><p>AssemblyAI transcribes the audio; Google Gemini coaches the transcript. Factual claims may be checked with Google Search. {import.meta.env.VITE_ANALYSIS_SERVICE==='supabase'?'Audio is stored temporarily in private Supabase storage and deleted after processing.':'The analysis server processes audio temporarily and requests provider cleanup.'} Scores save to Progress. Full transcripts and coaching sync only when you choose to keep them. Audio requires a separate save. Public challenge sharing is always optional.</p></details>
       {config?.demo && <p className="analysis-notice">Demo mode: Analyze displays a sample report. It does not transcribe your recording or contact an AI provider.</p>}
       {user && configLoaded && config?.enabled===false && !configError && <p className="analysis-notice">AI analysis is not configured yet. You can replay your recording and save your practice.</p>}
       {configError && <div><p role="alert" className="analysis-error">{configError}</p><button className="secondary-button" onClick={()=>setAvailabilityAttempt(n=>n+1)}>Check analysis again</button></div>}
@@ -230,7 +228,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           <div><strong>{report.metrics.fillerCount}</strong><span>Detected fillers</span></div>
           <div><strong>{report.metrics.estimatedPauses.length}</strong><span>Estimated long pauses</span></div>
         </div>
-        <p className="analysis-muted">Pace uses the full analyzed recording duration. Pause estimates use gaps of at least 1.5 seconds between recognized words. These are practice indicators, not an overall ability score.</p></details>
+        </details>
         <details className="analysis-transcript">
           <summary>Original transcript</summary>
           {!report.demo && transcriptSegments(report).length ? <div className="transcript-segments">{transcriptSegments(report).map((segment,i,segments)=><div key={i}><button className="transcript-seek" aria-label={`Play sentence at ${Math.floor(segment.startSeconds)} seconds`} aria-current={currentTime>=segment.startSeconds && currentTime<(segments[i+1]?.startSeconds ?? Infinity)?'true':undefined} onClick={()=>{if(playerRef.current){playerRef.current.currentTime=segment.startSeconds;void playerRef.current.play().catch(()=>setPlaybackError('Press play to hear this moment.'));}}}>{Math.floor(segment.startSeconds/60)}:{String(Math.floor(segment.startSeconds%60)).padStart(2,'0')} · {segment.text}</button><div className="filler-seeks">{segment.words.filter(w=>/^(um+|uh+|erm|er|hmm)[,.!?]?$/i.test(w.text)).map((w,j)=><button className="text-button" key={j} onClick={()=>{if(playerRef.current){playerRef.current.currentTime=w.start/1000;void playerRef.current.play().catch(()=>{});}}}>Hear “{w.text}”</button>)}</div></div>)}</div> : <p>{report.transcript}</p>}
@@ -247,7 +245,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           <button type="button" className="secondary-button" disabled={busy} onClick={forget}>Remove report from this take and saved feedback</button>
         </div>
       </>}
-      {user && <p className="analysis-muted">Coaching assesses your words and measured timing. Pronunciation and intonation assessment are not included.</p>}
+
     </section>
   );
 }

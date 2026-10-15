@@ -69,6 +69,7 @@ export default function PracticeDashboard({
         </div>
       </header>
 
+      {!isAuthenticated && <div className="guest-progress-actions"><p>Sign in to save your scores and review progress across devices. Recording and replay are available without an account.</p><button type="button" className="primary-button" onClick={onSignUp}>Sign in to save progress</button><a className="text-button" href="/practice">Practice without signing in</a></div>}
       {isAuthenticated && (
         <div
           className="grid grid-cols-1 gap-2 sm:grid-cols-3"

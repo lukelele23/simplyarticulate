@@ -16,13 +16,8 @@ export default function SplashScreen({onGoogleSignIn,error,onTryDemo,onExplore,o
             </svg><span>{isSigningIn?'Connecting…':'Sign in with Google'}</span></button></div></header>
   {(signInError||error)&&<p className="welcome-error" role="alert">{signInError||error}</p>}
   <section className="splash-hero" aria-labelledby="splash-title">
-   <div className="splash-hero-copy"><p className="splash-eyebrow">A LITTLE PRACTICE. A CLEARER VOICE.</p><h1 id="splash-title">You have something <br/>worth <em>saying.</em></h1><p className="splash-purpose">Everyone deserves the space to find their voice, shape their ideas and be understood. Start with a small moment of practice. Build from there.</p><div className="splash-actions"><button type="button" className="secondary-button introduction-demo" onClick={()=>onTryDemo(prompts[selectedPrompt])}>Try a one-minute practice <span aria-hidden="true">↗</span></button><button type="button" className="primary-button introduction-continue" onClick={onExplore}>Continue to <span className="introduction-wordmark">SimplyArticulate</span></button></div><p className="splash-small">Recording and replay are free. No account needed to start.</p></div>
+   <div className="splash-hero-copy"><p className="splash-eyebrow">A LITTLE PRACTICE. A CLEARER VOICE.</p><h1 id="splash-title">Practice speaking clearly, <br/><em>one minute at a time.</em></h1><p className="splash-purpose">Choose a topic, record your answer and hear it back. Sign in for AI feedback and a focused retry. Keep one useful correction in mind for your next take.</p><div className="splash-actions"><button type="button" className="secondary-button introduction-demo" onClick={()=>onTryDemo(prompts[selectedPrompt])}>Try a one-minute practice <span aria-hidden="true">↗</span></button><button type="button" className="primary-button introduction-continue" onClick={onExplore}>Continue to <span className="introduction-wordmark">SimplyArticulate</span></button></div><p className="splash-small">Recording and replay are free. No account needed to start.</p></div>
    <div className="splash-prompt-card"><div className="splash-card-top"><span>YOUR FIRST MINUTE</span><span className="splash-time">01:00</span></div><div className="splash-wave" aria-hidden="true">{[18,32,54,26,72,44,88,60,34,76,50,24,62,38,18].map((height,index)=><i key={index} style={{height:height+'px'}}/>)}</div><p className="splash-prompt-label">Try talking about this</p><h2>{prompts[selectedPrompt]}</h2><div className="splash-card-bottom"><button type="button" className="text-button" onClick={()=>setSelectedPrompt(index=>(index+1)%prompts.length)}>Another prompt ↻</button><span>Just you. One idea. One minute.</span></div></div>
   </section>
  </div></div>;
 }
-
-
-
-
-

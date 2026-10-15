@@ -1,0 +1,13 @@
+/* Keep the active challenge topic readable while giving the clock priority. */
+#root .daily-single-page.is-timing>.daily-prompt{min-height:0;padding:14px 18px;gap:8px;border-left-width:2px;background:transparent;}
+#root .daily-single-page.is-timing>.daily-prompt .section-topline{gap:8px;color:#aeb5bc;font-size:11px;}
+#root .daily-single-page.is-timing>.daily-prompt .eyebrow{font-size:9px;margin:0;}
+#root .daily-single-page.is-timing>.daily-prompt h2{font-size:clamp(15px,2vw,18px);line-height:1.5;font-weight:400;max-width:72ch;color:#d0d2d4;}
+#root .daily-single-page.is-timing .daily-username-display{display:none;}
+#root .daily-single-page.is-timing .daily-prompt-actions:empty{display:none;}
+#root .daily-single-page.is-timing .daily-prompt-actions{gap:8px;}
+#root .daily-single-page.is-timing .daily-phase-card{justify-items:center;text-align:center;gap:14px;padding:26px 20px;border-color:#59616a;background:#252c33;}
+#root .daily-single-page.is-timing .daily-phase-card h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#b9bbbd;}
+#root .daily-single-page.is-timing .daily-phase-clock{font-size:clamp(60px,10vw,88px);font-weight:300;line-height:1.1;letter-spacing:-.045em;padding:4px 0;color:#f3f5f7;}
+#root .daily-single-page.is-timing .daily-phase-actions{justify-content:center;width:100%;}
+@media(max-width:540px){#root .daily-single-page.is-timing>.daily-prompt{padding:12px 14px;}#root .daily-single-page.is-timing .daily-phase-card{padding:22px 14px;}#root .daily-single-page.is-timing .daily-phase-actions button{flex:1 1 130px;}}

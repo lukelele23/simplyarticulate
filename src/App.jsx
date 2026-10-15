@@ -1,5 +1,6 @@
+import NotFoundScreen from './screens/NotFoundScreen.jsx';
 import {introductionForLoad} from './lib/introduction.js';
-import PracticeFrame from './components/PracticeFrame.jsx';
+
 import useAppNavigation from './hooks/useAppNavigation.js';
 import { saveSpeechRating } from './lib/speechRating.js';
 import {sessionAccess} from './lib/authSecurity.js';
@@ -9,6 +10,7 @@ import './components/practiceImprovements.css';
 import { updateDraft } from './lib/drafts.js';
 import { lazy, Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { weeklyDays } from "./lib/practice.js";
+const PracticeFrame = lazy(() => import("./components/PracticeFrame.jsx"));
 const DifficultyScreen = lazy(() => import("./screens/DifficultyScreen.jsx"));
 const ResearchTimerScreen = lazy(() => import("./screens/ResearchTimerScreen.jsx"));
 const TimerScreen = lazy(() => import("./screens/TimerScreen.jsx"));
@@ -254,7 +256,8 @@ export default function App() {
   }
 
   let currentScreen;
-  if (screen === "recordings") {
+  if (screen === "not-found") { currentScreen = <NotFoundScreen/>; }
+  else if (screen === "recordings") {
     currentScreen = (
       <Suspense
         fallback={
@@ -293,7 +296,7 @@ export default function App() {
         difficulty={difficulty}
         topic={topic}
         debateSide={debateSide}
-        durationSeconds={challengeId || previousTake || !user ? 60 : settings.speechSeconds}
+        durationSeconds={challengeId || previousTake ? 60 : settings.speechSeconds}
         onBack={() => navigate("/practice")}
         onClipChange={setSpeechRecording}
         onFinish={(recording) => {
@@ -393,14 +396,3 @@ export default function App() {
     {introductionOpen && <Suspense fallback={null}><div className="introduction-overlay"><SplashScreen onDismiss={() => { dismissIntroduction(); navigate("/home"); }} onExplore={() => { dismissIntroduction(); navigate("/home"); }} onGoogleSignIn={async () => { await signInWithGoogle(); dismissIntroduction(); }} error={authError || draftError} onTryDemo={(prompt) => { dismissIntroduction(); setDifficulty("easy"); setTopicType("speech"); setTopic(prompt); setResearchSecondsLeft(0); setScreen("timer"); }} /></div></Suspense>}
   </>;
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,10 @@ test('Supabase deployment uses Edge Functions without requiring a separate backe
 });
 test('deploy routing preserves API paths before the SPA fallback',()=>{
  const {backend}=deploymentSettings(env),rules=netlifyRedirects(backend).trim().split('\n');
- assert.deepEqual(rules,['/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!','/* /index.html 200']);
+ assert.deepEqual(rules.slice(0,3),['/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!']);
+ assert.ok(rules.includes('/practice /practice/index.html 200'));
+ assert.ok(rules.includes('/practice/review /index.html 200'));
+ assert.equal(rules.at(-1),'/* /404.html 404');
 });
 test('missing or invalid backend addresses block an incomplete deployment',()=>{
  for(const url of ['', 'http://speech.backend.test','https://localhost','https://127.0.0.1','https://simplyarticulate.com','https://www.simplyarticulate.com','https://analysis.YOUR-HOST.example','https://speech.backend.test/api','https://user:secret@speech.backend.test'])assert.throws(()=>deploymentSettings({...env,ANALYSIS_BACKEND_URL:url}));

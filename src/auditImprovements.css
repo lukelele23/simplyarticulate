@@ -1,0 +1,20 @@
+#root .app-nav .wordmark{text-decoration:none;color:#f3f5f7;}
+#root .app-nav nav a{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:44px;padding:12px 18px;border:1px solid transparent;border-radius:10px;background:transparent;color:#b9bbbd;line-height:1.4;text-decoration:none;white-space:nowrap;}
+#root .app-nav nav a:hover{background:#262c33;color:#f3f5f7;border-color:#404244;}
+#root .app-nav nav a[aria-current="page"]{background:#c7c9cb;color:#202224;border-color:#dedfe0;font-weight:700;}
+#root .app-footer nav{display:flex;flex-wrap:wrap;gap:12px 18px;}
+#root .app-footer a,#root .membership-strip a{color:#c7c9cb;text-underline-offset:3px;}
+#root .guest-progress-actions{display:grid;justify-items:start;gap:10px;}
+#root .guest-progress-actions p{margin:0;line-height:1.6;}
+#root .practice-summary-segment>.practice-summary-label{font-size:11px;}
+#root .practice-stages li{font-size:12px;}
+#root .practice-stage-dot{background:#858b92;}
+#root .daily-leaderboard-header h3{margin:0;font-size:15px;font-weight:500;}
+#root .leaderboard-empty{margin:0;line-height:1.6;}
+@media(max-width:400px){#root .practice-settings-heading{flex-wrap:wrap;}#root .practice-summary-segments>.practice-summary-segment{padding-inline:6px;}#root .practice-settings-toggle{margin-left:auto;}}
+
+#root .leaderboard-empty{display:block;grid-template-columns:none;padding:4px 0;border:0;border-radius:0;background:transparent;}
+#root .practice-stages .practice-stage-dot{background:#858b92;}
+#root .practice-stages [aria-current="step"] .practice-stage-dot{background:#f3f5f7;}
+#root .daily-leaderboard-header[hidden]{display:none;}
+#root .home-panel .shared-transcripts h3{font-size:15px;font-weight:500;margin:0 0 6px;}

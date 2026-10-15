@@ -1,0 +1,1 @@
+export default function NotFoundScreen(){return <main id="main-content" className="screen"><section className="auth-card"><h1>Page not found</h1><p>The address may have changed.</p><a className="primary-button" href="/home">Go to Home</a><a className="text-button" href="/practice">Start practicing</a></section></main>;}
