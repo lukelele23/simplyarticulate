@@ -1,0 +1,16 @@
+{
+  "products": {
+    "pro_01m50zfh7jmprb7nhzey3t3r7a": "pro_01m51kmkh6jft92bac4b4nchq2"
+  },
+  "prices": {
+    "pri_01m50zj3ty4epv5qmmf1sz8r1b": "pri_01m51kmkks1f042pbk3m4d60vq",
+    "pri_01m50zp4464jqg9we8tqn0j3kq": "pri_01m51kmkpe87642qajgbmwypba"
+  },
+  "discounts": {},
+  "notification": {
+    "id": "ntfset_01m51kqn6jw43e5md9eeg60x4b",
+    "active": false,
+    "destination": "https://vyssmktvorjpubfzihmz.supabase.co/functions/v1/billing-webhook"
+  },
+  "clientTokenId": "ctkn_01m51kmksvrn85jhnjs82syt9p"
+}

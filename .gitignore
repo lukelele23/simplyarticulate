@@ -7,8 +7,10 @@ dist/
 work/
 .env
 .env.*
+!.env.example
 !.env.frontend.example
 !.env.backend.example
 .netlify/
 *.log
 !.env.supabase.example
+.env.supabase.local

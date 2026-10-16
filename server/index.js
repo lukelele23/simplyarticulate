@@ -36,6 +36,7 @@ export function readConfig(env = process.env) {
     geminiModel: env.GEMINI_MODEL || 'gemini-3.5-flash-lite', assemblyBase,
     supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL || '',
     supabaseKey: env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+    billingProvisioning: env.BILLING_PROVISIONING_ENABLED === 'true',
     paidDailyAnalyses: positive('AI_PAID_DAILY_ANALYSES', 25, 1000),
     maxSeconds: positive('AI_MAX_SECONDS', 300, 300),
     maxBytes: positive('AI_MAX_UPLOAD_MB', 12, 25) * 1024 * 1024,
@@ -120,7 +121,14 @@ export function createAnalysisServer(config, dependencies = {}) {
     const user = await response.json();
     if (typeof user.id !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(user.id)) throw Object.assign(new Error('Invalid sign-in.'), { status: 401 });
     authenticatedUsers.set(user.id,user);
-    entitlements.set(user.id, hasPaidEntitlement(user));
+    let mirroredPaid=false;
+    if(config.billingProvisioning){
+      const access=await fetchImpl(config.supabaseUrl.replace(/\/$/,'')+'/rest/v1/rpc/billing_my_access',{
+        method:'POST',headers:{authorization,apikey:config.supabaseKey,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(10000)});
+      if(!access.ok)throw Object.assign(new Error('Subscription access could not be verified. Please try again.'),{status:503});
+      const state=await access.json();mirroredPaid=state.hasPaidAccess===true&&state.provisioningEnabled===true;
+    }
+    entitlements.set(user.id,hasPaidEntitlement(user)||mirroredPaid);
     return user.id;
   }
   function rateLimit(owner) {

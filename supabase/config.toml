@@ -11,3 +11,12 @@ verify_jwt = false
 
 [edge_runtime]
 policy = "per_worker"
+
+[functions.billing-api]
+verify_jwt = false
+
+[functions.billing-webhook]
+verify_jwt = false
+
+[functions.billing-worker]
+verify_jwt = false

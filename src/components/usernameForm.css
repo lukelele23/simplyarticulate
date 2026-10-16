@@ -1,0 +1,14 @@
+#root .username-form{display:grid;gap:10px;text-align:left;}
+#root .username-form label{font-size:14px;font-weight:500;}
+#root .username-form input{box-sizing:border-box;width:100%;min-height:46px;border:1px solid #7c858e;border-radius:10px;background:#20262d;color:#f3f5f7;padding:10px 12px;font:inherit;}
+#root .username-help,#root .username-status{font-size:12px;line-height:1.6;color:#c7cdd3;margin:0;}
+#root .username-status{min-height:20px;}
+#root .username-error{font-size:13px;line-height:1.6;color:#f0a3a9;margin:0;}
+#root .username-form input:focus-visible{outline:2px solid #c7c9cb;outline-offset:3px;}
+#root .username-onboarding{display:grid;place-items:center;min-height:100svh;padding:20px;box-sizing:border-box;}
+#root .username-onboarding-card{box-sizing:border-box;width:min(100%,460px);padding:26px;border:1px solid #515860;border-radius:24px;background:#262729;display:grid;gap:18px;}
+#root .username-onboarding-card h1{font-size:28px;font-weight:500;line-height:1.2;margin:0;}
+#root .username-onboarding-card>p{margin:0;font-size:14px;line-height:1.6;color:#c7cdd3;}
+#root .username-settings{padding:16px;border:1px solid #515860;border-radius:14px;display:grid;gap:12px;}
+#root .username-settings>p{font-size:13px;line-height:1.6;color:#c7cdd3;}
+@media(max-width:540px){#root .username-onboarding-card{padding:20px;}}

@@ -30,3 +30,11 @@
 #root .app-nav .nav-account.nav-settings:focus-visible{outline:2px solid #c7c9cb;outline-offset:3px;}
 @media(max-width:540px){#root .app-nav .nav-account.nav-settings{padding:10px 12px;font-size:12px;}}
 @media(prefers-reduced-motion:reduce){#root .app-nav .nav-account.nav-settings{transition:none;}}
+
+/* Main destinations wrap instead of exposing a native horizontal scrollbar. */
+#root .app-nav nav[aria-label="Main navigation"]{display:flex;flex-wrap:wrap;justify-content:center;overflow:visible;max-width:100%;width:100%;padding-bottom:0;scrollbar-width:none;}
+#root .app-nav nav[aria-label="Main navigation"]::-webkit-scrollbar{display:none;}
+#root .app-nav .nav-scroll-hint{display:none;}
+#root .app-nav .nav-survey{background:transparent;border:0;box-shadow:none;color:#bdc2c8;font-size:12px;font-weight:400;padding:8px 4px;min-height:44px;}
+#root .app-nav .nav-survey:hover:not(:disabled){background:transparent;border:0;box-shadow:none;color:#f3f5f7;text-decoration:underline;text-underline-offset:4px;}
+@media(max-width:540px){#root .app-nav nav[aria-label="Main navigation"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}#root .app-nav nav[aria-label="Main navigation"] a{min-width:0;min-height:44px;box-sizing:border-box;padding:8px 4px;font-size:12px;white-space:normal;text-align:center;display:flex;justify-content:center;align-items:center;}#root .app-nav .nav-survey{font-size:11px;}}

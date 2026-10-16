@@ -1,3 +1,5 @@
+import BillingPanel from '../components/BillingPanel.jsx';
+import UsernameForm from '../components/UsernameForm.jsx';
 import {removeAccountDrafts} from '../lib/drafts.js';
 import {analysisRequest} from '../lib/speechAnalysis.js';
 import { useEffect, useState } from "react";
@@ -108,6 +110,8 @@ export default function SettingsScreen({
 
         {user ? (
           <div className="grid gap-3">
+            <BillingPanel user={user} onSignUp={onSignUp}/>
+            <section className="username-settings" aria-labelledby="settings-username-title"><h2 id="settings-username-title">Your username</h2><p>Your name is public only when you join a leaderboard. Existing leaderboard entries keep the name used when they were posted.</p><UsernameForm key={user.id} user={user} editing/></section>
             <button
               type="button"
               onClick={() => runAccountAction(onSignOut)}

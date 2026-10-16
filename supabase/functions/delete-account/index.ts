@@ -1,3 +1,5 @@
+import {closeBillingAccount} from '../_shared/billingDeletion.js';
+import {billingConfig,paddleClient} from '../_shared/billingCore.js';
 import {createClient} from "npm:@supabase/supabase-js@2";
 import {verifyDeletion,runDeletion,removeAccountFiles} from '../_shared/accountDeletion.js';
 const cors={"Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS","Access-Control-Allow-Origin":"*"};
@@ -13,7 +15,7 @@ Deno.serve(async request=>{
  let body:any;try{body=await request.json();}catch{return reply({error:'Invalid deletion request.'},400);}
  if(!/^[a-f0-9-]{36}$/.test(body.operationId||''))return reply({error:'A deletion operation ID is required.'},400);
  const receipt=await db.from('account_deletions').select('user_id').eq('id',body.operationId).maybeSingle();
- if(!receipt.error&&receipt.data&&receipt.data.user_id===null)return reply({message:'Account and associated data deleted.',completed:true,operation:body.operationId});
+ if(!receipt.error&&receipt.data&&receipt.data.user_id===null)return reply({message:'Account deleted. Billing records are retained.',completed:true,operation:body.operationId});
  const {data:{user},error}=await db.auth.getUser(token);if(error||!user)return reply({error:'Sign in again to continue.'},401);
  let operation: string | undefined;
  try{
@@ -24,6 +26,7 @@ Deno.serve(async request=>{
   operation=loaded.id;
   if(operation!==body.operationId){const changed=await db.from('account_deletions').update({id:body.operationId}).eq('user_id',user.id);if(changed.error)throw changed.error;operation=body.operationId;}
   const result=await runDeletion({load:async()=>({completed:loaded.completed||[]}),save:async(state:any)=>{const r=await db.from('account_deletions').update({completed:state.completed,updated_at:new Date().toISOString()}).eq('id',operation);if(r.error)throw r.error;},stages:[
+   {name:'billing',run:async()=>closeBillingAccount(db,user.id,(path:string,method?:string,body?:unknown)=>paddleClient(billingConfig(Deno.env.toObject()))(path,method,body))},
    {name:'public_entries',run:async()=>{const r=await db.from('sa_entries').delete().eq('user_id',user.id);if(r.error)throw r.error;}},
    {name:'recordings',run:async()=>removeAccountFiles(db.storage.from('speech-recordings'),user.id)},
    {name:'account',run:async()=>{const r=await db.auth.admin.deleteUser(user.id);if(r.error)throw r.error;}}
@@ -31,6 +34,6 @@ Deno.serve(async request=>{
   // No identity or speech content is retained in the completed operation record.
   // The opaque receipt survives briefly so a lost final response can be acknowledged after Auth deletion.
   await db.from('account_deletions').update({updated_at:new Date().toISOString()}).eq('id',operation);
-  return reply({...result,operation});
- }catch(cause:any){if(operation){const receipt=await db.from('account_deletions').select('user_id').eq('id',operation).maybeSingle();if(receipt.data&&receipt.data.user_id===null)return reply({message:'Account and associated data deleted.',completed:true,operation});}return reply({error:cause.status?cause.message:'Deletion is incomplete. Some data may already be removed. Retry to resume the remaining cleanup.',operation},cause.status||503);}
+  return reply({...result,message:'Account deleted. Billing records are retained.',operation});
+ }catch(cause:any){if(operation){const receipt=await db.from('account_deletions').select('user_id').eq('id',operation).maybeSingle();if(receipt.data&&receipt.data.user_id===null)return reply({message:'Account deleted. Billing records are retained.',completed:true,operation});}return reply({error:cause.status?cause.message:'Deletion is incomplete. Some data may already be removed. Retry to resume the remaining cleanup.',operation},cause.status||503);}
 });

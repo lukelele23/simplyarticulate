@@ -23,6 +23,8 @@ function getStoredUsername(user) {
 }
 
 export default function DailyChallengeScreen({
+  headingRef,
+  onUpdatePracticeActions,
   onRemoveSavedFeedback,
   onScore,
   goal,
@@ -33,9 +35,9 @@ export default function DailyChallengeScreen({
   onSignUp,
 }) {
   const [publicUsername, setPublicUsername] = useState(() => getStoredUsername(user));
-  const [usernameDraft, setUsernameDraft] = useState("");
-  const [usernameSaving, setUsernameSaving] = useState(false);
-  const [usernameError, setUsernameError] = useState("");
+
+
+
   const [now, setNow] = useState(() => new Date());
   const [dailyView,setDailyView]=useState('challenge');
   const leaderboardVisible=dailyView==='leaderboard';
@@ -73,8 +75,8 @@ export default function DailyChallengeScreen({
 
   useEffect(() => {
     setPublicUsername(getStoredUsername(user));
-    setUsernameDraft("");
-    setUsernameError("");
+
+
   }, [user?.id, user?.user_metadata?.username]);
 
   useEffect(() => {
@@ -212,42 +214,11 @@ export default function DailyChallengeScreen({
     if(didSave!==false)setSaved(true);
   }
 
-  async function saveUsername(event) {
-    event.preventDefault();
-    const username = usernameDraft.trim();
-    if (!USERNAME_PATTERN.test(username)) {
-      setUsernameError("Choose 3–24 letters, numbers, underscores, or hyphens.");
-      return;
-    }
-    if (!user) {
-      setUsernameError("Sign in before choosing a public username.");
-      return;
-    }
-
-    setUsernameSaving(true);
-    setUsernameError("");
-    try {
-      const { data, error } = await supabase.auth.updateUser({
-        data: { username },
-      });
-      if (error) throw error;
-      const savedUsername = data.user?.user_metadata?.username;
-      if (!USERNAME_PATTERN.test(savedUsername || "")) {
-        throw new Error("Your account did not confirm the username. Please try again.");
-      }
-      setPublicUsername(savedUsername);
-      setUsernameDraft("");
-    } catch (error) {
-      console.error("Failed to save daily challenge username:", error);
-      setUsernameError(error.message || "Could not save your username. Please try again.");
-    } finally {
-      setUsernameSaving(false);
-    }
-  }
 
   return (
-    <section className={`timer-card daily-card daily-single-page${challengeStarted && !recording ? " is-timing" : ""}`}>
-      <header className="daily-page-heading">
+    <>
+      <header className="daily-page-heading daily-destination-topline">
+        <h1 ref={headingRef} tabIndex={-1} className="destination-heading">Daily challenge</h1>
         <nav className="daily-section-nav" aria-label="Daily Challenge sections">
           {[['challenge','Challenge'],['leaderboard','Leaderboard'],['topic-vote','Topic Vote']].map(([view,label])=><button
             key={view} className="secondary-button daily-leaderboard-button" type="button"
@@ -257,6 +228,7 @@ export default function DailyChallengeScreen({
             onClick={()=>{setPrepRunning(false);setDailyView(view);}}>{label}</button>)}
         </nav>
       </header>
+    <section className={`timer-card daily-card daily-single-page${challengeStarted && !recording ? " is-timing" : ""}`}>
 
       <section className="daily-prompt" aria-labelledby="daily-prompt-title" hidden={challengeHidden}>
         <div className="section-topline">
@@ -268,28 +240,7 @@ export default function DailyChallengeScreen({
         </h2>
         {!activeChallenge && dailyTopic.error && <p role="alert">{dailyTopic.error}</p>}
         <div className="daily-prompt-actions" hidden={challengeHidden}>
-        {user && !publicUsername && (
-          <form className="daily-username-form" onSubmit={saveUsername}>
-            <label className="daily-reflection">
-              Choose your public challenge username
-              <input
-                value={usernameDraft}
-                onChange={(event) => setUsernameDraft(event.target.value)}
-                maxLength={24}
-                pattern="[A-Za-z0-9_-]{3,24}"
-                autoComplete="username"
-                required
-                placeholder="e.g. thoughtful_speaker"
-                disabled={usernameSaving}
-              />
-              <span>This username is saved to your account and reused for future challenges. It is only public if you join the leaderboard.</span>
-            </label>
-            {usernameError && <p role="alert" className="analysis-error">{usernameError}</p>}
-            <button className="secondary-button" type="submit" disabled={usernameSaving}>
-              {usernameSaving ? "Saving username…" : "Save username"}
-            </button>
-          </form>
-        )}
+
         {user && publicUsername && <p className="daily-username-display">Your challenge username: <strong>{publicUsername}</strong></p>}
         {user && sanitizedAttemptError && (
           <div>
@@ -326,7 +277,7 @@ export default function DailyChallengeScreen({
               {!prepComplete ? (
                 <section className="daily-phase-card">
                   <h2>Prepare</h2>
-                  <p className="daily-phase-clock" role="timer">{formatClock(prepSeconds)}</p>
+                  <p className="daily-phase-clock" style={{"--daily-progress":`${Math.max(0,Math.min(100,prepSeconds/PREP_SECONDS*100))}%`}} role="timer">{formatClock(prepSeconds)}</p>
                   <p>Take up to two minutes to prepare, or skip ahead to speaking.</p>
                   <div className="daily-phase-actions">
                     <button className="secondary-button" type="button" onClick={() => setPrepRunning((running) => !running)} disabled={prepSeconds === 0}>
@@ -340,7 +291,7 @@ export default function DailyChallengeScreen({
               ) : (
                 <section className="daily-phase-card">
                   <h2>Speak</h2>
-                  <p className={`daily-phase-clock${speechSeconds === 0 ? " is-finished" : ""}`} role="timer">
+                  <p className={`daily-phase-clock${speechSeconds === 0 ? " is-finished" : ""}`} style={{"--daily-progress":`${Math.max(0,Math.min(100,speechSeconds/SPEECH_SECONDS*100))}%`}} role="timer">
                     {formatClock(speechSeconds)}
                   </p>
                   <p>{speechRunning ? "Your minute is underway." : speechPaused ? "Speech paused. Resume when you’re ready." : "The microphone starts with the speech timer."}</p>
@@ -390,7 +341,7 @@ export default function DailyChallengeScreen({
             <section className="daily-review" aria-labelledby="daily-review-title">
               <h2 id="daily-review-title">{saved ? "Challenge complete" : "Review your take"}</h2>
               <Suspense fallback={<p className="analysis-muted" role="status">Loading speech analysis…</p>}>
-                <SpeechAnalysis
+                <SpeechAnalysis practiceSessions={sessions} onUpdatePracticeActions={onUpdatePracticeActions}
                   recording={recording}
                   key={recording.draftId}
                   initialReport={isRecovered ? recoveredTake?.report : null}
@@ -427,5 +378,6 @@ export default function DailyChallengeScreen({
       </div>
       </div>
     </section>
+    </>
   );
 }

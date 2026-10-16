@@ -1,3 +1,4 @@
+import PracticeActionPlan from './PracticeActionPlan.jsx';
 import { reportText, transcriptSegments } from '../lib/reports.js';
 import SpeechStars from './SpeechStars.jsx';
 import SavedFeedback from './SavedFeedback.jsx';
@@ -12,7 +13,7 @@ const STATUS_TEXT = {
   moderating: 'Checking your challenge score and community safety…', uploading: 'Preparing your recording…', transcribing: 'Writing down your words…', coaching: 'Preparing your feedback…',
 };
 
-export default function SpeechAnalysis({ recording, metadata, onReportChange, onResult, initialReport = null, onAttemptUsed, user, onSignUp, onRetry, onScore, onFeedbackPreference, onRemoveSavedFeedback }) {
+export default function SpeechAnalysis({ practiceSessions = [], onUpdatePracticeActions, recording, metadata, onReportChange, onResult, initialReport = null, onAttemptUsed, user, onSignUp, onRetry, onScore, onFeedbackPreference, onRemoveSavedFeedback }) {
   const [shareTranscript, setShareTranscript] = useState(false);
   const [published, setPublished] = useState(false);
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
@@ -78,7 +79,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
 
   useEffect(() => {
     if (user && report && !report.demo && Number.isInteger(report.coaching?.rating?.stars)) {
-      onScore?.({ report: saveReport ? report : null, rating: report.coaching.rating, recording, metadata:{...metadata,nextFocus:report.coaching.nextStep||report.coaching.nextExercise,focusReview:report.coaching.focusReview} });
+      onScore?.({ report: saveReport ? report : null, rating: report.coaching.rating, recording, metadata:{...metadata,analysisVersion:report.coaching.analysisVersion,nextFocus:report.coaching.nextStep||report.coaching.nextExercise,focusReview:report.coaching.focusReview} });
     }
   }, [report, saveReport, user?.id, onScore]);
 
@@ -221,7 +222,8 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
           {published && <><p role="status">Your entry is on today’s leaderboard.{shareTranscript?' Your transcript is also shared.':' Your transcript stays private.'}</p><button className="text-button" onClick={withdrawEntry} disabled={busy}>Withdraw my public entry</button></>}
         </section>}
         {report.demo && <p className="analysis-notice"><strong>Sample report — these are not your spoken words.</strong></p>}
-        {report.coaching && <section className="feedback-outcome"><h3>Your coaching outcome</h3><p>{report.coaching.summary}</p><p><strong>What worked:</strong> {report.coaching.strength?.observation}</p><p><strong>Focus next:</strong> {report.coaching.nextStep || report.coaching.nextExercise}</p><p>Coach rating: {report.coaching.rating?.stars ?? '—'}/10</p>{report.coaching.focusReview && <p><strong>Your practiced improvement:</strong> {report.coaching.focusReview.assessment}</p>}</section>}
+        {report.coaching && <section className="feedback-outcome"><h3>Your coaching outcome</h3><p>{report.coaching.summary}</p><p><strong>What worked:</strong> {report.coaching.strength?.observation}</p><p><strong>Focus next:</strong> {report.coaching.nextStep || report.coaching.nextExercise}</p>{report.coaching.focusReview && <p><strong>Your practiced improvement:</strong> {report.coaching.focusReview.assessment}</p>}</section>}
+        {report.coaching && !report.demo && <PracticeActionPlan report={report} topic={metadata.topic} state={practiceSessions.find(item=>item.id===(recording.draftId||recording.requestKey))?.practiceActions} onChange={onUpdatePracticeActions?patch=>onUpdatePracticeActions(recording.draftId||recording.requestKey,patch):undefined} onRetry={onRetry} busy={busy} onSeek={seconds=>{if(playerRef.current){playerRef.current.currentTime=seconds;void playerRef.current.play().catch(()=>setPlaybackError('Press play to hear this moment.'));}}}/>}
         <details><summary>Recording measurements</summary><div className="analysis-metrics">
           <div><strong>{report.metrics.wordCount}</strong><span>Words</span></div>
           <div><strong>{report.metrics.wordsPerMinute}</strong><span>Words per minute</span></div>
@@ -236,7 +238,7 @@ export default function SpeechAnalysis({ recording, metadata, onReportChange, on
         {report.coachingError && <p role="alert" className="analysis-error">{report.coachingError}</p>}
         {report.coachingError && jobIdRef.current && !report.demo && <button className="secondary-button" disabled={busy} onClick={refreshCoaching}>Retry coaching on this transcript</button>}
         {report.cleanupWarning && <p role="alert" className="analysis-error">{report.cleanupWarning}</p>}
-        {report.coaching?.argumentLogic ? <FrameworkFeedback coaching={report.coaching} onRetry={onRetry} busy={busy} /> : report.coaching && <><SavedFeedback report={report}/>{onRetry && <button className="primary-button" disabled={busy} onClick={()=>onRetry(report.coaching.improvements?.[0] || report.coaching.nextExercise)}>Practice this improvement</button>}</>}
+        <details className="analysis-full-feedback"><summary>Detailed coaching</summary>{report.coaching?.argumentLogic ? <FrameworkFeedback coaching={report.coaching} showSummary={false} busy={busy} /> : report.coaching && <SavedFeedback report={report}/>}</details>
         <SpeechStars key={report.jobId||recording.draftId} resultId={report.jobId||recording.draftId} rating={report.coaching?.rating} animate />
         {!report.demo && <label className="analysis-consent"><input type="checkbox" checked={saveReport} onChange={(event) => {setSaveReport(event.target.checked);onFeedbackPreference?.(event.target.checked?report:null);}} />Keep transcript and coaching in my account. It will sync to my private account when available.</label>}
         <p className="analysis-muted">Removing this report deletes this take’s saved transcript and coaching, including its local recovery report. Your score and audio remain. Public challenge transcripts require separate withdrawal.</p>

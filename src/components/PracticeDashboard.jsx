@@ -32,6 +32,7 @@ function getPracticeStreak(sessions) {
 function getDisplayName(user) {
   const metadata = user?.user_metadata || {};
   const profileName = [
+    metadata.username,
     metadata.full_name,
     metadata.name,
     [metadata.given_name, metadata.family_name]
@@ -42,6 +43,7 @@ function getDisplayName(user) {
 }
 
 export default function PracticeDashboard({
+  onUpdatePracticeActions,
   sessions,
   user,
   isAuthenticated,
@@ -124,7 +126,7 @@ export default function PracticeDashboard({
                 <SpeechStars rating={session.rating || session.analysis?.coaching?.rating} />
                 {session.analysis && <details className="analysis-history">
                   <summary>Saved speech feedback</summary>
-                  <SavedFeedback report={session.analysis} />
+                  <SavedFeedback report={session.analysis} actionState={session.practiceActions} onActionChange={patch=>onUpdatePracticeActions?.(session.id,patch)} topic={session.topic} />
                 </details>}
               </article>
             ))

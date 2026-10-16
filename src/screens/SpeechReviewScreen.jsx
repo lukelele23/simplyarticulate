@@ -6,6 +6,7 @@ import { lazy, Suspense } from 'react';
 const SpeechAnalysis = lazy(() => import('../components/SpeechAnalysis.jsx'));
 
 export default function SpeechReviewScreen({
+  practiceSessions, onUpdatePracticeActions,
   embedded = false,
   includePreparation = false,
   onRemoveSavedFeedback, onScore, user, onSignUp, onRetry, previousTake, focus, onResult, initialReport,
@@ -28,7 +29,7 @@ export default function SpeechReviewScreen({
           <p className="timer-topic">{topic}</p>
         </header>
 
-        {recording && <Suspense fallback={<p className="analysis-muted" role="status">Loading speech analysis…</p>}><SpeechAnalysis onRemoveSavedFeedback={onRemoveSavedFeedback} onScore={onScore} recording={recording} metadata={analysisMetadata} user={user} onSignUp={onSignUp} onRetry={onRetry} onFeedbackPreference={onAnalysisChange} onReportChange={onAnalysisChange} onResult={receiveReport} initialReport={initialReport} /></Suspense>}
+        {recording && <Suspense fallback={<p className="analysis-muted" role="status">Loading speech analysis…</p>}><SpeechAnalysis practiceSessions={practiceSessions} onUpdatePracticeActions={onUpdatePracticeActions} onRemoveSavedFeedback={onRemoveSavedFeedback} onScore={onScore} recording={recording} metadata={analysisMetadata} user={user} onSignUp={onSignUp} onRetry={onRetry} onFeedbackPreference={onAnalysisChange} onReportChange={onAnalysisChange} onResult={receiveReport} initialReport={initialReport} /></Suspense>}
 
         {recording && <SaveAudio recording={recording} user={user} topic={topic} difficulty={analysisMetadata.difficulty}/>}
         <TakeComparison previous={previousTake} recording={recording} report={report} focus={focus}/>

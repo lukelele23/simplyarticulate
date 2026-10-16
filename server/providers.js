@@ -1,3 +1,4 @@
+import {parseCoachingJson,COACHING_VERSION} from '../supabase/functions/_shared/coachingOutput.js';
 import { FRAMEWORK_SCHEMA, FRAMEWORK_PROMPT, validateFramework, verifyClaims } from './framework.js';
 import { setTimeout as delay } from 'node:timers/promises';
 import { measureSpeech } from './metrics.js';
@@ -64,9 +65,7 @@ export async function generateCoaching(transcript, metadata, metrics, config, si
       }),
     }, signal, fetchImpl,
   );
-  const text = response.candidates?.[0]?.content?.parts?.filter((part) => !part.thought).map((part) => part.text || '').join('');
-  if (!text) throw new Error('No coaching was returned.');
-  return { ...validateFramework(JSON.parse(text), transcript, verification.sources, metrics.wordCount, metadata), groundingMetadata: verification.groundingMetadata };
+  return { ...validateFramework(parseCoachingJson(response), transcript, verification.sources, metrics.wordCount, metadata), analysisVersion:COACHING_VERSION, groundingMetadata: verification.groundingMetadata };
 }
 
 export function logCoachingFailure(error, model) {

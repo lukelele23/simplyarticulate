@@ -1,0 +1,9 @@
+#root .research-prep{width:100%;max-width:760px;box-sizing:border-box;margin:8px auto;border:1px solid #515860;border-radius:16px;text-align:left;}
+#root .research-prep summary{min-height:44px;padding:12px 14px;box-sizing:border-box;cursor:pointer;font-size:13px;color:#e2e5e8;}
+#root .research-prep-content{display:grid;gap:10px;padding:0 14px 14px;}
+#root .research-prep p,#root .research-prep li,#root .research-prep small{margin:0;font-size:12px;line-height:1.6;color:#c7cdd3;}
+#root .research-prep ul{margin:0;padding-left:18px;}
+#root .research-prep label{font-size:12px;font-weight:500;}
+#root .research-prep textarea{box-sizing:border-box;width:100%;max-width:100%;resize:vertical;background:#20262d;color:#f3f5f7;border:1px solid #7c858e;border-radius:10px;padding:10px;font:inherit;font-size:13px;line-height:1.5;}
+#root .research-prep textarea:focus-visible{outline:2px solid #c7c9cb;outline-offset:3px;}
+#root .research-prep .secondary-button{justify-self:start;min-height:44px;font-size:12px;border-radius:999px;}

@@ -1,0 +1,15 @@
+#root .practice-action-plan{display:grid;gap:12px;padding:18px;border:1px solid #616a73;border-radius:20px;background:#ffffff03;}
+#root .practice-action-plan header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;}
+#root .practice-action-plan h3{margin:0;font-size:18px;font-weight:500;}
+#root .practice-action-plan header>span{font-size:12px;color:#c7cdd3;font-variant-numeric:tabular-nums;}
+#root .practice-action-plan p{margin:0;font-size:12px;line-height:1.6;color:#c7cdd3;}
+#root .practice-action-plan ul{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
+#root .practice-action-plan li{padding:12px 0;border-top:1px solid #414850;}
+#root .practice-action-plan li label{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.6;cursor:pointer;}
+#root .practice-action-plan input{width:18px;height:18px;flex-shrink:0;margin:3px 0;accent-color:#c7c9cb;}
+#root .practice-action-plan blockquote{margin:8px 0 0 28px;padding-left:10px;border-left:2px solid #7c858e;font-size:13px;line-height:1.6;color:#c7cdd3;}
+#root .practice-action-plan summary{cursor:pointer;min-height:44px;padding:10px 0;box-sizing:border-box;font-size:13px;}
+#root .practice-note-label{display:grid;gap:8px;font-size:13px;}
+#root .practice-action-plan textarea{width:100%;box-sizing:border-box;resize:vertical;padding:10px;border:1px solid #7c858e;border-radius:10px;background:#20262d;color:#f3f5f7;font:inherit;line-height:1.6;margin-bottom:8px;}
+#root .practice-action-plan :is(input,textarea):focus-visible{outline:2px solid #c7c9cb;outline-offset:3px;}
+#root .analysis-full-feedback>summary{cursor:pointer;min-height:44px;padding:10px 0;}

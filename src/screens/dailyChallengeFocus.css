@@ -1,13 +1,35 @@
-/* Keep the active challenge topic readable while giving the clock priority. */
-#root .daily-single-page.is-timing>.daily-prompt{min-height:0;padding:14px 18px;gap:8px;border-left-width:2px;background:transparent;}
-#root .daily-single-page.is-timing>.daily-prompt .section-topline{gap:8px;color:#aeb5bc;font-size:11px;}
-#root .daily-single-page.is-timing>.daily-prompt .eyebrow{font-size:9px;margin:0;}
-#root .daily-single-page.is-timing>.daily-prompt h2{font-size:clamp(15px,2vw,18px);line-height:1.5;font-weight:400;max-width:72ch;color:#d0d2d4;}
-#root .daily-single-page.is-timing .daily-username-display{display:none;}
-#root .daily-single-page.is-timing .daily-prompt-actions:empty{display:none;}
-#root .daily-single-page.is-timing .daily-prompt-actions{gap:8px;}
-#root .daily-single-page.is-timing .daily-phase-card{justify-items:center;text-align:center;gap:14px;padding:26px 20px;border-color:#59616a;background:#252c33;}
-#root .daily-single-page.is-timing .daily-phase-card h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#b9bbbd;}
-#root .daily-single-page.is-timing .daily-phase-clock{font-size:clamp(60px,10vw,88px);font-weight:300;line-height:1.1;letter-spacing:-.045em;padding:4px 0;color:#f3f5f7;}
-#root .daily-single-page.is-timing .daily-phase-actions{justify-content:center;width:100%;}
-@media(max-width:540px){#root .daily-single-page.is-timing>.daily-prompt{padding:12px 14px;}#root .daily-single-page.is-timing .daily-phase-card{padding:22px 14px;}#root .daily-single-page.is-timing .daily-phase-actions button{flex:1 1 130px;}}
+/* Daily Challenge follows the compact Practice spacing and soft shapes. */
+#root .compact-daily{padding:16px 20px;}
+#root .compact-daily .app-nav{padding-bottom:10px;row-gap:8px;}
+#root .daily-destination-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 12px;width:100%;}
+#root .daily-destination-topline h1.destination-heading{margin:0;font-size:clamp(24px,3vw,30px);line-height:1.2;flex:0 1 auto;}
+#root .daily-destination-topline .daily-section-nav{margin-left:auto;justify-content:flex-end;gap:8px;}
+#root .daily-destination-topline .daily-section-nav button{min-height:44px;padding:9px 14px;border-radius:999px;font-size:13px;white-space:nowrap;}
+#root .compact-daily .daily-single-page{box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:0;gap:12px;border:0;border-radius:0;background:transparent;box-shadow:none;}
+#root .compact-daily .daily-single-page>.daily-prompt{box-sizing:border-box;min-height:0;padding:14px 18px;gap:10px;border:1px solid #515860;border-radius:24px;background:#23282f;}
+#root .compact-daily .daily-single-page>.daily-prompt[hidden]{display:none;}
+#root .compact-daily .daily-prompt .section-topline{gap:8px;font-size:11px;color:#c7cdd3;}
+#root .compact-daily .daily-prompt .eyebrow{margin:0;font-size:9px;}
+#root .compact-daily .daily-single-page>.daily-prompt h2{max-width:72ch;margin:0;font-size:clamp(16px,1.8vw,20px);font-weight:500;line-height:1.45;}
+#root .compact-daily :is(.daily-prompt-actions,.daily-challenge-panel,.daily-live-controls,.daily-review){gap:10px;}
+#root .compact-daily .daily-username-display{margin:0;font-size:12px;line-height:1.5;}
+#root .compact-daily .daily-prompt-actions>.primary-button{min-height:44px;padding:10px 16px;border-radius:999px;font-size:13px;}
+#root .compact-daily .daily-single-page.is-timing>.daily-prompt{max-width:560px;margin-inline:auto;padding:12px 16px;gap:6px;background:transparent;}
+#root .compact-daily .daily-single-page.is-timing>.daily-prompt h2{font-size:15px;font-weight:400;color:#d0d2d4;}
+#root .compact-daily .daily-single-page.is-timing .daily-username-display{display:none;}
+#root .compact-daily .daily-prompt-actions:empty{display:none;}
+#root .compact-daily .daily-phase-card{box-sizing:border-box;width:100%;max-width:560px;margin-inline:auto;padding:18px;gap:12px;border:1px solid #515860;border-radius:28px;background:#262729;justify-items:center;text-align:center;}
+#root .compact-daily .daily-phase-card h2{margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#c7cdd3;}
+#root .compact-daily .daily-phase-clock{box-sizing:border-box;width:min(240px,100%);margin:0;padding:8px 16px;font-size:52px;line-height:1.1;font-weight:400;letter-spacing:-.045em;color:#f3f5f7;font-variant-numeric:tabular-nums;}
+#root .compact-daily .daily-phase-clock::after{content:'';display:block;height:3px;margin-top:12px;border-radius:2px;background:linear-gradient(to right,#c7c9cb var(--daily-progress),#41474e var(--daily-progress));}
+#root .compact-daily .daily-phase-card>p:not(.daily-phase-clock){font-size:12px;line-height:1.5;color:#c7cdd3;}
+#root .compact-daily .daily-phase-actions{justify-content:center;gap:8px;margin-top:0;width:100%;}
+#root .compact-daily .daily-phase-actions button{min-height:44px;padding:10px 16px;border-radius:999px;font-size:13px;}
+#root .compact-daily .daily-challenge-panel>.speech-recorder{box-sizing:border-box;width:100%;max-width:560px;margin-inline:auto;padding:12px;border-radius:20px;}
+#root .compact-daily .speech-recorder p{font-size:12px;line-height:1.5;margin:0;}
+#root .compact-daily .app-footer{margin-top:20px;padding:14px 0;gap:10px;}
+#root .compact-daily .daily-single-page .daily-leaderboard{padding:16px;border-radius:20px;}
+#root .compact-daily .daily-single-page .leaderboard-list li{padding:12px;}
+#root .compact-daily .shared-transcripts{padding:14px;margin:10px 0 0;}
+@media(max-width:700px){#root .daily-destination-topline{flex-wrap:wrap;}#root .daily-destination-topline .daily-section-nav{margin-left:auto;}}
+@media(max-width:540px){#root .compact-daily{padding:12px;}#root .daily-destination-topline{margin:12px 0 10px;gap:6px;}#root .daily-destination-topline .daily-section-nav button{padding:9px 10px;font-size:12px;}#root .compact-daily .daily-single-page>.daily-prompt{padding:14px;border-radius:20px;}#root .compact-daily .daily-phase-card{padding:12px;border-radius:24px;}#root .compact-daily .daily-phase-clock{font-size:44px;width:min(220px,100%);}#root .compact-daily .daily-phase-actions button{flex:1 1 110px;padding:9px 10px;font-size:12px;}}

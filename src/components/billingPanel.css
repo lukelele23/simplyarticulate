@@ -1,0 +1,8 @@
+.billing-panel{display:grid;gap:.7rem;padding:1rem;border:1px solid var(--line,#505458);border-radius:18px;background:rgba(255,255,255,.025)}
+.billing-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.billing-panel h3,.billing-panel p{margin:0}.billing-panel h3{font-size:1.1rem;font-weight:600}
+.billing-panel-heading span{font-size:.75rem;border:1px solid #70767b;padding:.2rem .55rem;border-radius:8px;color:#d7dce0}
+.billing-panel p{font-size:.9rem;color:#c8cdd1;line-height:1.5}.billing-panel .billing-test-notice{color:#b6deed}
+.billing-panel-actions{display:flex;gap:.5rem;flex-wrap:wrap}.billing-panel button{padding:.6rem .85rem;min-height:44px;border:1px solid #737b82;border-radius:10px;color:#f1f4f5;background:#252d34;font:inherit;cursor:pointer}
+.billing-panel button:focus-visible{outline:2px solid #b6deed;outline-offset:3px}.billing-panel button:disabled{opacity:.6;cursor:wait}
+@media(max-width:480px){.billing-panel-actions>button{flex:1 1 auto}.billing-panel{padding:.8rem}}

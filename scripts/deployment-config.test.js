@@ -9,7 +9,7 @@ test('Supabase deployment uses Edge Functions without requiring a separate backe
 });
 test('deploy routing preserves API paths before the SPA fallback',()=>{
  const {backend}=deploymentSettings(env),rules=netlifyRedirects(backend).trim().split('\n');
- assert.deepEqual(rules.slice(0,3),['/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!']);
+ assert.deepEqual(rules.slice(0,4),['/api/paddle-context /.netlify/functions/paddle-context 200!','/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!']);
  assert.ok(rules.includes('/practice /practice/index.html 200'));
  assert.ok(rules.includes('/practice/review /index.html 200'));
  assert.equal(rules.at(-1),'/* /404.html 404');
@@ -20,6 +20,7 @@ test('missing or invalid backend addresses block an incomplete deployment',()=>{
 });
 test('provider secrets and service-role keys cannot enter the frontend configuration',()=>{
  assert.throws(()=>deploymentSettings({...env,VITE_GEMINI_API_KEY:'private'}),/backend/);
+ assert.throws(()=>deploymentSettings({...env,VITE_PADDLE_API_KEY:'private'}),/backend/);
  assert.throws(()=>deploymentSettings({...env,VITE_SUPABASE_PUBLISHABLE_KEY:'sb_secret_private'}),/secret key/);
  const jwt=`a.${Buffer.from(JSON.stringify({role:'service_role'})).toString('base64url')}.b`;
  assert.throws(()=>deploymentSettings({...env,VITE_SUPABASE_PUBLISHABLE_KEY:jwt}),/service-role/);

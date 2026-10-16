@@ -1,3 +1,6 @@
+import {updatePracticeActions} from './lib/practiceActions.js';
+import UsernameScreen from './screens/UsernameScreen.jsx';
+import {accountUsername} from './lib/username.js';
 import NotFoundScreen from './screens/NotFoundScreen.jsx';
 import {introductionForLoad} from './lib/introduction.js';
 
@@ -16,9 +19,11 @@ const ResearchTimerScreen = lazy(() => import("./screens/ResearchTimerScreen.jsx
 const TimerScreen = lazy(() => import("./screens/TimerScreen.jsx"));
 const SpeechReviewScreen = lazy(() => import("./screens/SpeechReviewScreen.jsx"));
 import LoginScreen from "./screens/LoginScreen.jsx";
+const BillingWelcomeScreen = lazy(() => import('./screens/BillingWelcomeScreen.jsx'));
 const SettingsScreen = lazy(() => import("./screens/SettingsScreen.jsx"));
 import usePersistentState from "./hooks/usePersistentState.js";
 import { supabase } from "../utils/supabase.js";
+import {billingRequest,getPaddle} from './lib/paddlePricing.js';
 
 const SplashScreen = lazy(() => import("./screens/SplashScreen.jsx"));
 const RecordingsScreen = lazy(() => import("./screens/RecordingsLibrary.jsx"));
@@ -40,6 +45,13 @@ const introductionAtPageLoad = (() => { try { return introductionForLoad(window.
 
 export default function App() {
   const [user, setUser] = useState(null);
+  useEffect(()=>{
+    if(import.meta.env.VITE_BILLING_ENABLED!=='true')return;
+    let canceled=false;
+    if(user)billingRequest('status').then(status=>{if(!canceled&&status.environment===import.meta.env.VITE_PADDLE_ENVIRONMENT)return getPaddle(status.paddleCustomerId||null);}).catch(()=>{});
+    else getPaddle(null).catch(()=>{});
+    return()=>{canceled=true;};
+  },[user?.id]);
   const activeUserIdRef = useRef(undefined);
   const microphoneScroll = useRef(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -74,7 +86,7 @@ export default function App() {
   const [initialReport,setInitialReport]=useState(null), [recoveredChallenge,setRecoveredChallenge]=useState(null);
   useEffect(()=>{const listener=event=>setStorageError(event.detail);window.addEventListener('practice-storage-error',listener);return()=>window.removeEventListener('practice-storage-error',listener);},[]);
   const keepAnalysis=useCallback(report=>{setSpeechAnalysis(report);if(speechRecording?.draftId)setStoredSessions(current=>current.map(item=>item.id===speechRecording.draftId?{...item,analysis:report||undefined,syncFeedback:Boolean(report)}:item));if(speechRecording?.draftId)void updateDraft(speechRecording.draftId,{report:report || null}).catch(()=>setDraftError('Feedback could not be kept in the local recovery copy. Download it before leaving.'));},[speechRecording?.draftId,setStoredSessions]);
-  const removeSavedFeedback=useCallback(id=>{setStoredSessions(current=>current.map(item=>item.id===id?{...item,analysis:undefined,syncFeedback:false}:item));if(id)void updateDraft(id,{report:null}).catch(()=>setDraftError('Saved feedback was removed, but the local recovery report could not be updated.'));},[setStoredSessions]);
+  const removeSavedFeedback=useCallback(id=>{setStoredSessions(current=>current.map(item=>item.id===id?{...item,analysis:undefined,practiceActions:undefined,syncFeedback:false}:item));if(id)void updateDraft(id,{report:null}).catch(()=>setDraftError('Saved feedback was removed, but the local recovery report could not be updated.'));},[setStoredSessions]);
   function practicePlan(plan){setPreviousTake(null);setLatestReport(null);setInitialReport(null);setTopic(plan.prompt);setTopicType('speech');setDifficulty('medium');setRetryFocus(plan.steps.join(' '));setAttempt(n=>n+1);setScreen('timer');}
   const loadedSettings =
     savedSettings && typeof savedSettings === "object" && !Array.isArray(savedSettings)
@@ -185,6 +197,11 @@ export default function App() {
     });
   }, [user?.id, setStoredSessions]);
 
+  const changePracticeActions = useCallback((id,patch) => {
+    if (!user?.id) return;
+    setStoredSessions(current=>updatePracticeActions(current,id,patch));
+  },[user?.id,setStoredSessions]);
+
   function savePractice() {
     const session = {
       id: speechRecording?.draftId || crypto.randomUUID(),
@@ -201,6 +218,8 @@ export default function App() {
       ...(speechAnalysis ? { analysis: speechAnalysis } : {}),
       nextFocus:latestReport?.coaching?.nextStep||sessions.find(item=>item.id===speechRecording?.draftId)?.nextFocus,
       rating: latestReport?.coaching?.rating || sessions.find(item=>item.id===speechRecording?.draftId)?.rating,
+      practiceActions:sessions.find(item=>item.id===speechRecording?.draftId)?.practiceActions,
+      analysisVersion:latestReport?.coaching?.analysisVersion || sessions.find(item=>item.id===speechRecording?.draftId)?.analysisVersion,
       syncFeedback:Boolean(speechAnalysis),
     };
     setStoredSessions((current) => [
@@ -225,6 +244,8 @@ export default function App() {
       ...(analysis ? { analysis } : {}),
       nextFocus:analysis?.coaching?.nextStep||sessions.find(item=>item.id===recording?.draftId)?.nextFocus,
       rating: analysis?.coaching?.rating || sessions.find(item=>item.id===recording?.draftId)?.rating,
+      practiceActions:sessions.find(item=>item.id===recording?.draftId)?.practiceActions,
+      analysisVersion:analysis?.coaching?.analysisVersion || sessions.find(item=>item.id===recording?.draftId)?.analysisVersion,
       syncFeedback:Boolean(analysis),
     };
     setStoredSessions((current) => [
@@ -245,6 +266,8 @@ export default function App() {
   }
 
 
+  if (user && !accountUsername(user) && screen !== "settings") return <UsernameScreen key={user.id} user={user} onSignOut={signOut} onComplete={updated=>{setUser(updated);dismissIntroduction();navigate(view==="subscription"?"/subscription":screen==="welcome"?"/welcome":"/home",true);}}/>;
+
   if (screen === "signup" && !user) {
     return (
       <LoginScreen
@@ -256,7 +279,8 @@ export default function App() {
   }
 
   let currentScreen;
-  if (screen === "not-found") { currentScreen = <NotFoundScreen/>; }
+  if (screen === "welcome") { currentScreen = <BillingWelcomeScreen user={user} onSignUp={openSignUp}/>; }
+  else if (screen === "not-found") { currentScreen = <NotFoundScreen/>; }
   else if (screen === "recordings") {
     currentScreen = (
       <Suspense
@@ -323,7 +347,7 @@ export default function App() {
   } else if (screen === "review") {
     currentScreen = (
       <SpeechReviewScreen embedded includePreparation={topicType !== 'debate' && settings.researchSeconds > 0}
-        onRemoveSavedFeedback={removeSavedFeedback}
+        onRemoveSavedFeedback={removeSavedFeedback} onUpdatePracticeActions={changePracticeActions} practiceSessions={sessions}
         onScore={saveScore}
         user={user}
         onSignUp={openSignUp}
@@ -343,7 +367,7 @@ export default function App() {
     currentScreen = (
       <>
         <DifficultyScreen
-          onRemoveSavedFeedback={removeSavedFeedback}
+          onRemoveSavedFeedback={removeSavedFeedback} onUpdatePracticeActions={changePracticeActions} practiceSessions={sessions}
           onRecover={take=>{if(take.owner!==(user?.id||'signed-out'))return;if(take.format==='daily-challenge'){setRecoveredChallenge(take);navigate('/daily-challenge');return;}setTopic(take.topic);setDifficulty(take.difficulty||'easy');setTopicType(take.format||'speech');setSpeechRecording({blob:take.blob,storageBlob:take.storageBlob,durationSeconds:take.durationSeconds,draftId:take.id,requestKey:take.id,recordedAt:take.recordedAt,recovery:true});setInitialReport(take.report||null);setSpeechAnalysis(take.report||null);setLatestReport(take.report||null);setRetryFocus(take.focus||'');setScreen('review');}}
           onScore={saveScore}
           view={view}
@@ -386,7 +410,7 @@ export default function App() {
   if (["research-timer", "timer", "review"].includes(screen)) {
     currentScreen = <PracticeFrame stage={screen === "research-timer" ? "prepare" : screen === "timer" ? "speak" : "review"} includePreparation={topicType !== "debate" && settings.researchSeconds > 0} user={user} onViewChange={nextView => navigate("/" + nextView)} onOpenSettings={() => setScreen("settings")} onSignUp={openSignUp}>{currentScreen}</PracticeFrame>;
   }
-  const introductionOpen = showIntroduction && !user && screen === "difficulty";
+  const introductionOpen = showIntroduction && !user && screen === "difficulty" && view !== "subscription";
   return <>
     <div style={screen === "timer" && microphoneScroll.current ? {minHeight:microphoneScroll.current.height} : undefined} inert={introductionOpen || undefined} aria-hidden={introductionOpen || undefined}>
     {(sessionSync.error || storageError || draftError) && <div className="storage-notice" role="alert">{storageError || draftError || sessionSync.error}{user && <button className="text-button" onClick={()=>{sessionSync.retry();setStorageError('');}}>Retry saving and sync</button>}</div>}

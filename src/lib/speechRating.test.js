@@ -19,3 +19,8 @@ test('daily challenge stars retain challenge identity and invalid scores cannot 
  assert.equal(saveSpeechRating([],daily,'2026-10-12')[0].challengeId,'2026-10-12');
  for(const stars of [-1,11,2.5])assert.equal(saveSpeechRating([],{...take,rating:{stars}},'2026-10-12').length,0);
 });
+
+test('prompt version remains available without storing a transcript',()=>{
+ const rows=saveSpeechRating([], {...take,metadata:{...take.metadata,analysisVersion:'coach-v2'}},'2026-10-12');assert.equal(rows[0].analysisVersion,'coach-v2');assert.equal(rows[0].analysis,undefined);
+ const revised=saveSpeechRating(rows,{...take,metadata:{...take.metadata,analysisVersion:'coach-v3'}},'2026-10-12');assert.equal(revised[0].analysisVersion,'coach-v3');
+});

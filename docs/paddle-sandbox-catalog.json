@@ -1,0 +1,36 @@
+{
+  "environment": "sandbox",
+  "product": {
+    "name": "SimplyArticulate Pro",
+    "id": "pro_01m50zfh7jmprb7nhzey3t3r7a"
+  },
+  "prices": [
+    {
+      "name": "Pro Monthly",
+      "id": "pri_01m50zj3ty4epv5qmmf1sz8r1b",
+      "billing_cycle": {"interval": "month", "frequency": 1},
+      "trial_period": {"interval": "day", "frequency": 3, "requires_payment_method": true},
+      "unit_price": {"amount": "699", "currency_code": "USD"},
+      "unit_price_overrides": [
+        {"country_codes": ["GB"], "unit_price": {"amount": "499", "currency_code": "GBP"}},
+        {"country_codes": ["IE"], "unit_price": {"amount": "599", "currency_code": "EUR"}},
+        {"country_codes": ["AU"], "unit_price": {"amount": "999", "currency_code": "AUD"}}
+      ]
+    },
+    {
+      "name": "Pro Annual",
+      "id": "pri_01m50zp4464jqg9we8tqn0j3kq",
+      "billing_cycle": {"interval": "year", "frequency": 1},
+      "trial_period": {"interval": "day", "frequency": 3, "requires_payment_method": true},
+      "unit_price": {"amount": "7299", "currency_code": "USD"},
+      "unit_price_overrides": [
+        {"country_codes": ["GB"], "unit_price": {"amount": "5299", "currency_code": "GBP"}},
+        {"country_codes": ["IE"], "unit_price": {"amount": "6299", "currency_code": "EUR"}},
+        {"country_codes": ["AU"], "unit_price": {"amount": "10499", "currency_code": "AUD"}}
+      ]
+    }
+  ],
+  "tax_mode": "account_setting",
+  "quantity": {"minimum": 1, "maximum": 1},
+  "other_tiers": "Starter and Advanced have not been created; their pricing-page buttons remain disabled pending distinct prices."
+}

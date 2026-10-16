@@ -1,0 +1,13 @@
+import {useEffect,useRef,useState} from 'react';
+import {supabase} from '../../utils/supabase.js';
+import {accountUsername,usernameError,saveAccountUsername} from '../lib/username.js';
+import './usernameForm.css';
+export default function UsernameForm({user,onSaved,editing=false}){
+ const [value,setValue]=useState(()=>accountUsername(user)),[availability,setAvailability]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[saved,setSaved]=useState(false);
+ const requestId=useRef(0),saving=useRef(false);
+ const inputId=editing?'settings-username':'onboarding-username';
+ const name=value.trim(),invalid=usernameError(name),unchanged=name===accountUsername(user);
+ useEffect(()=>{let active=true;const id=++requestId.current;setAvailability('');if(!name||invalid||unchanged)return()=>{active=false;};setAvailability('Checking availability…');const timer=setTimeout(async()=>{try{const {data,error}=await supabase.rpc('sa_username_available',{p_username:name});if(active&&id===requestId.current)setAvailability(error?'Availability check unavailable. Try saving again.':data===true?'Username available':'That username is taken.');}catch{if(active)setAvailability('Availability check unavailable. Try saving again.');}},400);return()=>{active=false;clearTimeout(timer);};},[name,invalid,unchanged]);
+ async function submit(event){event.preventDefault();if(saving.current)return;setError('');setSaved(false);if(invalid){setError(invalid);return;}saving.current=true;setBusy(true);try{const updated=await saveAccountUsername(supabase,name);setSaved(true);onSaved?.(updated);}catch(cause){setError(cause.message||'Your username could not be saved. Please try again.');}finally{saving.current=false;setBusy(false);}}
+ return <form className="username-form" onSubmit={submit} aria-busy={busy}><label htmlFor={inputId}>Username</label><input id={inputId} value={value} onChange={event=>{setValue(event.target.value);setError('');setSaved(false);}} minLength={3} maxLength={24} pattern="[A-Za-z0-9_-]{3,24}" autoComplete="username" autoCapitalize="none" spellCheck={false} required disabled={busy} aria-describedby={`${inputId}-help ${inputId}-status`} aria-invalid={Boolean(error)} placeholder="e.g. thoughtful_speaker"/><p id={`${inputId}-help`} className="username-help">3–24 letters, numbers, underscores or hyphens. Names are unique regardless of capitalization.</p><p id={`${inputId}-status`} className="username-status" role="status">{saved?'Username saved.':availability}</p>{error&&<p className="username-error" role="alert">{error}</p>}<button type="submit" className="primary-button" disabled={busy||(editing&&unchanged)||availability==='That username is taken.'}>{busy?'Saving…':editing?'Save username':'Continue'}</button></form>;
+}

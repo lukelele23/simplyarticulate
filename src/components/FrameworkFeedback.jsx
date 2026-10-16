@@ -2,10 +2,10 @@ function Issues({ items }) {
   return <ul>{items.map((item, index) => <li key={index}><blockquote>{item.quote}</blockquote><p>{item.explanation}</p><p><strong>Try:</strong> {item.suggestion}</p></li>)}</ul>;
 }
 const labels = { supported: 'Supported', contradicted: 'Contradicted', partially_supported: 'Partially supported', unverified: 'Unverified', not_checked: 'Not checked' };
-export default function FrameworkFeedback({ coaching, onRetry, busy }) {
+export default function FrameworkFeedback({ coaching, onRetry, busy, showSummary = true }) {
   const a = coaching.argumentLogic, s = coaching.structureLanguage;
   return <div className="analysis-coaching">
-    <p>{coaching.summary}</p>
+    {showSummary && <p>{coaching.summary}</p>}
     {a.assessment&&<><h3>Argument and logic</h3><p>{a.assessment}</p></>}
     {a.strengths.length > 0 && <><h4>What worked</h4><ul>{a.strengths.map((text, i) => <li key={i}>{text}</li>)}</ul></>}
     {a.rhetoricalStructure && <><h4>Rhetorical structure</h4><p>{a.rhetoricalStructure}</p></>}

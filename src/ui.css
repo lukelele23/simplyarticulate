@@ -329,3 +329,83 @@
 #root .compact-practice .speaking-timer-page .speech-recorder{border:0;border-top:1px solid #515860;border-radius:0;background:transparent;padding:12px 0 0;}
 #root .compact-practice .speaking-timer-page .microphone-check>button{border-radius:999px;}
 @media(max-width:540px){#root .compact-practice .topic-display-viewport{border-radius:20px;}#root .compact-practice .practice-session-content :is(.speaking-timer-page,.preparation-timer-page){border-radius:24px;}}
+
+/* Compact microphone check instead of a full-width action. */
+#root .microphone-check{gap:6px;justify-items:start;}
+#root .microphone-check>button.secondary-button{width:auto;max-width:100%;min-height:44px;padding:8px 12px;border-radius:999px;font-size:12px;line-height:1.3;justify-self:start;}
+#root .microphone-check meter{width:min(200px,100%);height:10px;}
+#root .microphone-check p{margin:0;font-size:12px;line-height:1.5;}
+
+/* Center the title above a left/right Practice toolbar. */
+#root .compact-practice .destination-topline.has-practice-stages{flex-direction:column;align-items:stretch;justify-content:center;gap:10px;text-align:center;}
+#root .compact-practice .has-practice-stages .destination-heading{width:100%;text-align:center;}
+#root .compact-practice .has-practice-stages .practice-stages{align-self:flex-start;margin:0;width:auto;}
+#root .compact-practice .has-practice-stages .practice-stages ol{justify-content:flex-start;}
+#root .compact-practice .practice-settings-heading,#root .compact-practice .is-settings-open .practice-settings-heading{justify-content:space-between;align-items:center;flex-direction:row;flex-wrap:wrap;gap:10px;}
+#root .compact-practice .practice-settings-heading>.practice-stages{margin:0;flex:0 0 auto;}
+#root .compact-practice .practice-settings-heading .practice-stages ol{justify-content:flex-start;}
+#root .compact-practice .practice-settings-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:auto;min-width:0;max-width:100%;}
+#root .compact-practice .practice-settings-summary{flex:0 1 auto;text-align:left;}
+#root .compact-practice .practice-settings-toggle{flex:0 0 auto;}
+@media(max-width:540px){#root .compact-practice .practice-settings-heading>.practice-stages{flex-basis:100%;}#root .compact-practice .practice-settings-actions{flex-wrap:wrap;}}
+/* Keep the three Practice header groups close without changing their alignment. */
+#root .compact-practice .destination-topline.has-practice-stages{margin:8px 0 2px;gap:4px;}
+#root .compact-practice .practice-grid>.practice-setup{gap:6px;}
+#root .compact-practice .practice-settings-heading,#root .compact-practice .is-settings-open .practice-settings-heading{width:100%;max-width:760px;margin-inline:auto;gap:6px 12px;}
+#root .compact-practice .practice-settings-heading .practice-stages ol{gap:8px;}
+#root .compact-practice .practice-settings-actions{gap:6px;}
+#root .compact-practice .practice-grid{gap:6px;}
+@media(max-width:540px){#root .compact-practice .practice-settings-heading>.practice-stages{flex-basis:auto;}#root .compact-practice .practice-settings-heading{row-gap:4px;}}
+
+/* One aligned desktop row: stages / centered title / settings and Edit. */
+#root .compact-practice .practice-settings-heading,#root .compact-practice .is-settings-open .practice-settings-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;width:100%;max-width:none;margin:12px 0 6px;gap:12px;}
+#root .compact-practice .practice-settings-heading>.practice-toolbar-title{grid-column:2;grid-row:1;margin:0;text-align:center;white-space:nowrap;font-family:Georgia,serif;font-size:clamp(24px,2.4vw,30px);line-height:1.2;}
+#root .compact-practice .practice-settings-heading>.practice-stages{grid-column:1;grid-row:1;justify-self:start;margin:0;}
+#root .compact-practice .practice-settings-actions{grid-column:3;grid-row:1;justify-self:end;margin:0;flex-wrap:nowrap;}
+#root .compact-practice .destination-topline.has-practice-stages{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;margin:12px 0;gap:12px;}
+#root .compact-practice .has-practice-stages .destination-heading{grid-column:2;grid-row:1;margin:0;}
+#root .compact-practice .has-practice-stages .practice-stages{grid-column:1;grid-row:1;align-self:center;}
+@media(max-width:1000px){#root .compact-practice .practice-settings-heading,#root .compact-practice .is-settings-open .practice-settings-heading,#root .compact-practice .destination-topline.has-practice-stages{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;}#root .compact-practice .practice-settings-heading>.practice-toolbar-title,#root .compact-practice .has-practice-stages .destination-heading{grid-column:1/-1;grid-row:1;}#root .compact-practice .practice-settings-heading>.practice-stages,#root .compact-practice .has-practice-stages .practice-stages{grid-column:1;grid-row:2;}#root .compact-practice .practice-settings-actions{grid-column:2;grid-row:2;}}
+@media(max-width:540px){#root .compact-practice .practice-settings-heading,#root .compact-practice .is-settings-open .practice-settings-heading{grid-template-columns:minmax(0,1fr);}#root .compact-practice .practice-settings-actions{grid-column:1;grid-row:3;flex-wrap:wrap;}#root .compact-practice .practice-settings-heading>.practice-toolbar-title{white-space:normal;}}
+
+/* Preserve one common alignment plane instead of stacking header groups. */
+#root .compact-practice .practice-header-scroll{width:100%;max-width:100%;min-width:0;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px;}
+#root .compact-practice .practice-header-scroll .practice-settings-heading{display:grid;grid-template-columns:minmax(150px,1fr) auto minmax(280px,1fr);align-items:center;min-width:720px;width:100%;margin:4px 0 0;gap:12px;}
+#root .compact-practice .practice-header-scroll .practice-toolbar-title{grid-column:2;grid-row:1;align-self:center;margin:0;white-space:nowrap;font-size:26px;}
+#root .compact-practice .practice-header-scroll .practice-stages{grid-column:1;grid-row:1;align-self:center;margin:0;}
+#root .compact-practice .practice-header-scroll .practice-stages ol{align-items:center;flex-wrap:nowrap;}
+#root .compact-practice .practice-header-scroll .practice-settings-actions{grid-column:3;grid-row:1;align-self:center;justify-self:end;flex-wrap:nowrap;margin:0;}
+
+/* Mobile header fits the viewport without a horizontal scroll region. */
+@media(max-width:767px){
+ #root .compact-practice .practice-header-scroll{overflow:visible;padding:0;}
+ #root .compact-practice .practice-header-scroll .practice-settings-heading{min-width:0;max-width:100%;grid-template-columns:minmax(0,1fr);gap:8px;margin:6px 0;}
+ #root .compact-practice .practice-header-scroll .practice-toolbar-title{grid-column:1;grid-row:1;white-space:normal;overflow-wrap:anywhere;font-size:24px;}
+ #root .compact-practice .practice-header-scroll .practice-stages{grid-column:1;grid-row:2;justify-self:center;max-width:100%;}
+ #root .compact-practice .practice-header-scroll .practice-stages ol{justify-content:center;flex-wrap:wrap;gap:10px;}
+ #root .compact-practice .practice-header-scroll .practice-settings-actions{grid-column:1;grid-row:3;justify-self:center;width:100%;max-width:100%;min-width:0;justify-content:center;gap:6px;flex-wrap:wrap;}
+ #root .compact-practice .practice-settings-summary{min-width:0;max-width:100%;}
+ #root .compact-practice .practice-summary-segments>.practice-summary-segment{padding:4px 6px;font-size:11px;}
+ #root .compact-practice .practice-settings-toggle{padding:8px 10px;}
+}
+
+/* Keep settings and its edit action inside one continuous pill. */
+#root .compact-practice .practice-header-scroll .practice-settings-actions{gap:0;border:1px solid #68727c;border-radius:999px;background:#20262d;overflow:hidden;}
+#root .compact-practice .practice-settings-summary .practice-summary-segments{border:0;border-radius:0;background:transparent;}
+#root .compact-practice .practice-settings-actions .practice-settings-toggle{border:0;border-left:1px solid #515860;border-radius:0;background:transparent;align-self:stretch;min-height:44px;padding:8px 12px;}
+#root .compact-practice .practice-settings-actions .practice-settings-toggle:hover{background:#30363d;}
+#root .compact-practice .practice-settings-actions .practice-settings-toggle:focus-visible{outline-offset:-3px;}
+@media(max-width:767px){#root .compact-practice .practice-header-scroll .practice-settings-actions{width:auto;max-width:100%;flex-wrap:nowrap;justify-self:center;}#root .compact-practice .practice-settings-actions .practice-settings-toggle{padding:8px;gap:4px;}}
+
+/* Equal gaps on either side of the centered Practice title. */
+#root .compact-practice .practice-header-scroll .practice-settings-heading{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);column-gap:24px;}
+#root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-stages{justify-self:end;}
+#root .compact-practice .practice-header-scroll .practice-settings-actions{justify-self:start;}
+@media(max-width:767px){#root .compact-practice .practice-header-scroll .practice-settings-heading{grid-template-columns:minmax(0,1fr);column-gap:0;}#root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-stages,#root .compact-practice .practice-header-scroll .practice-settings-actions{justify-self:center;}}
+
+@media(min-width:768px){
+ #root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-stages{width:max-content;max-width:none;justify-self:end;margin:0;}
+ #root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-stages ol{width:max-content;justify-content:flex-end;margin:0;}
+ #root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-toolbar-title{width:max-content;justify-self:center;margin:0;}
+ #root .compact-practice .practice-header-scroll .practice-settings-heading>.practice-settings-actions{width:max-content;justify-self:start;margin:0;}
+}
