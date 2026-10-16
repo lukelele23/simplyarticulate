@@ -18,7 +18,7 @@ export default function PricingCards({country,user,onSignUp,locationReady=true})
   const ids=tiers.map(t=>t.priceId[interval]).filter(priceIdValid);
   if(new Set(ids).size!==ids.length){setError('Each plan needs its own distinct Paddle price ID.');setLoading(false);return;}
   if(!ids.length){setLoading(false);return;}
-  (user?billingRequest('status').then(status=>{if(canceled)throw Error('Selection changed');if(status.environment!==paddlePublicConfig.VITE_PADDLE_ENVIRONMENT)throw Error('Frontend and billing-server environments do not match.');return getPaddle(status.paddleCustomerId||null);}):getPaddle(null)).then(async paddle=>previewPrices(await paddle.PricePreview(previewRequest(ids,country)),ids))
+  (user&&checkoutEnabled?billingRequest('status').then(status=>{if(canceled)throw Error('Selection changed');if(status.environment!==paddlePublicConfig.VITE_PADDLE_ENVIRONMENT)throw Error('Frontend and billing-server environments do not match.');return getPaddle(status.paddleCustomerId||null);}):getPaddle(null)).then(async paddle=>previewPrices(await paddle.PricePreview(previewRequest(ids,country)),ids))
    .then(next=>{if(!canceled&&ticket===sequence.current)setPrices(next);})
    .catch(cause=>{if(!canceled&&ticket===sequence.current)setError(cause.message||'Prices could not be loaded.');})
    .finally(()=>{if(!canceled&&ticket===sequence.current)setLoading(false);});

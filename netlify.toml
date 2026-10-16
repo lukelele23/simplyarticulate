@@ -8,6 +8,11 @@
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL"
   # Publish plan information while checkout remains disabled.
   VITE_BILLING_ENABLED = "false"
+  # Public Paddle.js settings; these are safe to include in the browser.
+  VITE_PADDLE_ENVIRONMENT = "production"
+  VITE_PADDLE_CLIENT_TOKEN = "live_7b4adbf7135c82bed455b78d0cc"
+  VITE_PADDLE_PRO_MONTH_PRICE_ID = "pri_01m51kmkks1f042pbk3m4d60vq"
+  VITE_PADDLE_PRO_YEAR_PRICE_ID = "pri_01m51kmkpe87642qajgbmwypba"
 
 [[headers]]
   for = "/*"
