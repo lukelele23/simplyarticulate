@@ -22,7 +22,7 @@ export function deploymentSettings(env){
 }
 export function netlifyRedirects(backend){
  const routes=[...new Set(Object.values(screenPaths))].filter(route=>!MAIN_VIEWS.includes(route.slice(1))).flatMap(route=>[`${route} /index.html 200`,`${route}/ /index.html 200`]).join('\n');
- const information=["about","guides","privacy","terms","support"].flatMap(page=>[`/${page} /${page}/index.html 200`,`/${page}/ /${page}/index.html 200`]).join("\n");
+ const information=["about","guides","privacy","terms","refunds","support"].flatMap(page=>[`/${page} /${page}/index.html 200`,`/${page}/ /${page}/index.html 200`]).join("\n");
  const views=MAIN_VIEWS.map(view=>`/${view} /${view}/index.html 200`).join('\n');
  return `/api/paddle-context /.netlify/functions/paddle-context 200!\n/api/analysis ${backend}/api/analysis 200!\n/api/analysis/* ${backend}/api/analysis/:splat 200!\n/api/* /api-unavailable.json 404!\n${views}\n${routes}\n${information}\n/* /404.html 404\n`;
 }

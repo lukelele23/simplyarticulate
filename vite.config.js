@@ -15,7 +15,7 @@ export default defineConfig({
     name: 'public-information-pages',
     configureServer(server) {
       server.middlewares.use((request, _response, next) => {
-        const match = /^\/(about|guides|privacy|terms|support)\/?(?:\?.*)?$/.exec(request.url || '');
+        const match = /^\/(about|guides|privacy|terms|refunds|support)\/?(?:\?.*)?$/.exec(request.url || '');
         if (match) request.url = `/${match[1]}/index.html`;
         next();
       });

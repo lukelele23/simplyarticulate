@@ -11,6 +11,9 @@ test('deploy routing preserves API paths before the SPA fallback',()=>{
  const {backend}=deploymentSettings(env),rules=netlifyRedirects(backend).trim().split('\n');
  assert.deepEqual(rules.slice(0,4),['/api/paddle-context /.netlify/functions/paddle-context 200!','/api/analysis https://speech.backend.test/api/analysis 200!','/api/analysis/* https://speech.backend.test/api/analysis/:splat 200!','/api/* /api-unavailable.json 404!']);
  assert.ok(rules.includes('/practice /practice/index.html 200'));
+ assert.ok(rules.includes('/refunds /refunds/index.html 200'));
+ assert.ok(rules.includes('/refunds/ /refunds/index.html 200'));
+ assert.ok(rules.includes('/subscription /subscription/index.html 200'));
  assert.ok(rules.includes('/practice/review /index.html 200'));
  assert.equal(rules.at(-1),'/* /404.html 404');
 });

@@ -4,6 +4,10 @@
 
 [build.environment]
   NODE_VERSION = "24"
+  # Public frontend URL; keep scanning enabled for actual credentials.
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL"
+  # Publish plan information while checkout remains disabled.
+  VITE_BILLING_ENABLED = "false"
 
 [[headers]]
   for = "/*"
