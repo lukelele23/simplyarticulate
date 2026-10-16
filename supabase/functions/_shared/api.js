@@ -1,3 +1,4 @@
+import {challengeDay} from '../../../src/lib/challengeDay.js';
 import {isAllowedOrigin} from './origins.js';
 import {rpc,row,publicJob,safeError} from './database.js';
 import {validateMetadata} from './metrics.js';
@@ -18,7 +19,7 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
    if(origin&&!allowed.has(origin))return reply({error:'This website origin is not allowed.'},403);
    if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
    const url=new URL(request.url),path=url.pathname.replace(/^.*\/speech-api/,'');
-   const today=new Date().toISOString().slice(0,10),method=request.method;
+   const today=challengeDay(),method=request.method;
    if(method==='GET'&&path==='/api/analysis/config')return reply({enabled:enabled(),demo:false,requiresSignIn:true,maxSeconds:300,maxUploadBytes:12582912,jobTimeoutMs:1800000});
    if(method==='GET'&&path==='/api/analysis/health'){
     const state=await rpc(db,'sa_health');const ready=enabled()&&['scheduler','progress','focusedRetry','survey','deletion','recordings'].every(key=>state?.[key]===true);return reply({ready,features:state},ready?200:503);
@@ -49,7 +50,7 @@ export function createSpeechApi(db,env,background,fetchImpl=fetch){
     const body=await json(request);if(body?.consent!==true||typeof body.shareTranscript!=='boolean'||typeof body.jobId!=='string')throw Error('SA400:Confirm public entry and choose whether to share your transcript.');return reply({entry:await rpc(db,'sa_publish',{p_user:owner,p_job:body.jobId,p_share:body.shareTranscript})},201);
    }
    if(!enabled())return reply({error:'AI analysis is not configured yet. Your local recording remains available.'},503);
-   if(method==='GET'&&path==='/api/analysis/usage')return reply({day:today,...await rpc(db,'sa_usage_snapshot',{p_user:owner,p_format:url.searchParams.get('format')||'speech'})});
+   if(method==='GET'&&path==='/api/analysis/usage')return reply({day:new Date().toISOString().slice(0,10),...await rpc(db,'sa_usage_snapshot',{p_user:owner,p_format:url.searchParams.get('format')||'speech'})});
    if(method==='POST'&&path==='/api/analysis'){
     if(!request.headers.get('content-type')?.startsWith('multipart/form-data;'))throw Error('SA400:Send an audio recording and practice details.');
     const bytes=await limited(request,12582912+8192),form=await new Request(request.url,{method:'POST',headers:request.headers,body:bytes}).formData();

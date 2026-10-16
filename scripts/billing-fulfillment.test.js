@@ -15,7 +15,10 @@ async function database(){const db=new PGlite();await db.exec(`create schema aut
  create table auth.users(id uuid primary key,email text,raw_app_meta_data jsonb default '{}');
  create function auth.uid() returns uuid language sql as $$select nullif(current_setting('app.uid',true),'')::uuid$$;
  create function public.sa_paid(p_user uuid) returns boolean language sql as $$select false$$;`);
- try{await db.exec(read('20261014000300_paddle_billing.sql'));await db.exec(read('20261015000200_billing_fulfillment.sql'));}catch(error){await db.close();throw error;}
+ try{await db.exec(read('20261014000300_paddle_billing.sql'));await db.exec(read('20261015000200_billing_fulfillment.sql'));
+ await db.exec(read('20261016170110_security_resource_limits.sql').split('-- Revoke client')[0]+'commit;');
+ await db.exec(read('20261016170116_billing_adjustment_security.sql'));
+ }catch(error){await db.close();throw error;}
  return db;}
 function adapter(db,user){return {auth:{getUser:async()=>({data:{user},error:null})},rpc:async(name,args={})=>{
  try{const parameters=Object.values(args),slots=parameters.map((_,i)=>'$'+(i+1)).join(',');
@@ -42,7 +45,7 @@ function canonical(){const customer={id:id('ctm'),email:'owner@example.com',crea
  currentBillingPeriod:{startsAt:'2026-09-01T00:00:00Z',endsAt:'2026-10-01T00:00:00Z'},
  items:[{quantity:1,price:{id:id('pri'),productId:id('pro')}}],scheduledChange:{action:'cancel',effectiveAt:'2026-11-01T00:00:00Z'}};
  const transaction={id:id('txn'),customerId:customer.id,subscriptionId:subscription.id,status:'completed',createdAt:customer.createdAt,updatedAt:customer.updatedAt};
- return {customer,subscription,transaction,sdk:{customers:{get:async()=>customer},subscriptions:{get:async()=>subscription},transactions:{get:async()=>transaction}}};}
+ return {customer,subscription,transaction,sdk:{adjustments:{list:()=>({async *[Symbol.asyncIterator](){}})},customers:{get:async()=>customer},subscriptions:{get:async()=>subscription},transactions:{get:async()=>transaction}}};}
 
 test('fulfillment migration preserves existing bindings and is repeatable; duplicate IDs do not create more entities',async()=>{
  const db=await database();try{

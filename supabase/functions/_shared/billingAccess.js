@@ -1,6 +1,6 @@
 import {billingError,checked} from './billingCore.js';
 /** Scheduled changes and date boundaries are not terminal status changes. Past due/paused deny access. */
-export function grantsPaidAccess(subscription){return Boolean(subscription?.eligible&&['active','trialing'].includes(subscription.status));}
+export function grantsPaidAccess(subscription){return Boolean(subscription?.eligible&&subscription.adjustments_checked!==false&&!subscription.access_blocked&&['active','trialing'].includes(subscription.status));}
 export async function accountAccess(db,userId,config){
  const customer=await checked(db.from('billing_customers').select('paddle_customer_id,deleting').eq('user_id',userId).maybeSingle());
  if(!customer?.paddle_customer_id||customer.deleting)return {hasPaidAccess:false,plan:'free'};

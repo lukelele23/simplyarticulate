@@ -43,7 +43,7 @@ test('canonical snapshots require the approved price, quantity and valid provide
  assert.throws(()=>subscriptionSnapshot({...sub,id:'forged'},id('pri')),/Invalid billing/);
 });
 test('billing API rejects missing auth, unknown origins and client-supplied ownership/price fields',async()=>{
- let authCalls=0;const db={auth:{getUser:async()=>{authCalls++;return {data:{user:{id:crypto.randomUUID()}},error:null};}}};
+ let authCalls=0;const db={rpc:async()=>({data:true,error:null}),auth:{getUser:async()=>{authCalls++;return {data:{user:{id:crypto.randomUUID()}},error:null};}}};
  const api=createBillingApi(db,config,()=>{throw Error('must not call provider');});
  assert.equal((await api(new Request('https://test',{method:'POST',body:'{}'}))).status,401);
  assert.equal((await api(new Request('https://test',{method:'POST',headers:{origin:'https://evil.example'},body:'{}'}))).status,403);

@@ -1,3 +1,4 @@
+import {challengeDay} from '../src/lib/challengeDay.js';
 import { verifyDeletion } from '../supabase/functions/_shared/accountDeletion.js';
 import { localDeletionJournal, acknowledgeLocalDeletion } from './local-deletion.js';
 import { focusedRetries } from './focused-retry.js';
@@ -223,20 +224,20 @@ export function createAnalysisServer(config, dependencies = {}) {
         return respond(res,405,{error:'Method not allowed.'});
       }
       if (req.method === 'GET' && url.pathname === '/api/analysis/community') {
-        const day = url.searchParams.get('day') || new Date().toISOString().slice(0,10);
+        const day = url.searchParams.get('day') || challengeDay();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return respond(res,400,{error:'Invalid challenge day.'});
         return respond(res,200,{entries:store.list(day),day});
       }
       if (req.method === 'GET' && url.pathname === '/api/analysis/community/attempt') {
         const owner = await authenticate(req);
-        const day = url.searchParams.get('day') || new Date().toISOString().slice(0,10);
+        const day = url.searchParams.get('day') || challengeDay();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return respond(res,400,{error:'Invalid challenge day.'});
         const attempt=store.attempt(owner,day);
         return respond(res,200,{day,used:Boolean(attempt),recoverable:attempt?.state==='failed',state:attempt?.state || 'available'});
       }
       if (req.method === 'DELETE' && url.pathname === '/api/analysis/community') {
         const owner = await authenticate(req);
-        store.withdraw(owner,new Date().toISOString().slice(0,10)); return respond(res,200,{withdrawn:true});
+        store.withdraw(owner,challengeDay()); return respond(res,200,{withdrawn:true});
       }
       if(req.method==='POST'&&url.pathname==='/api/analysis/delete-account'){
         const body=JSON.parse((await readBody(req,2048)).toString('utf8'));

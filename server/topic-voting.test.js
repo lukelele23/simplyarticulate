@@ -19,7 +19,7 @@ function fixture(t){
 }
 test('ballot is persisted, uses unique existing topics, and excludes the current challenge',async t=>{
  const f=fixture(t),today=await f.service.challenge(),ballot=await f.service.ballot('user-a');
- assert.equal(ballot.targetDay,'2026-10-12');assert.equal(ballot.closesAt,'2026-10-12T00:00:00.000Z');
+ assert.equal(ballot.targetDay,'2026-10-12');assert.equal(ballot.closesAt,'2026-10-12T05:00:00.000Z');
  assert.equal(ballot.choices.length,3);assert.equal(new Set(ballot.choices.map(choice=>choice.topic)).size,3);
  assert.ok(ballot.choices.every(choice=>rows.some(row=>row.topic===choice.topic)&&choice.topic!==today.topic));
  f.topics([{id:99,topic:'A newly added topic.'}]);
@@ -102,10 +102,10 @@ test('invalid choices and stale ballots cannot create votes; simultaneous reques
  await Promise.all(['user-a','user-b','user-c'].map(owner=>f.service.vote(owner,poll.targetDay,poll.choices[0].id)));
  assert.equal((await f.service.ballot('user-d')).totalVotes,3);
 });
-test('voting closes exactly at midnight UTC and the next ballot targets the following day',async t=>{
+test('voting closes exactly at midnight EST and the next ballot targets the following day',async t=>{
  const f=fixture(t),poll=await f.service.ballot('user-a');
- f.setTime('2026-10-11T23:59:59Z');await f.service.vote('user-a',poll.targetDay,poll.choices[0].id);
- f.setTime('2026-10-12T00:00:00Z');
+ f.setTime('2026-10-12T04:59:59Z');await f.service.vote('user-a',poll.targetDay,poll.choices[0].id);
+ f.setTime('2026-10-12T05:00:00Z');
  await assert.rejects(()=>f.service.vote('user-b',poll.targetDay,poll.choices[1].id),{status:409});
  assert.equal((await f.service.challenge()).topic,poll.choices[0].topic);
  assert.equal((await f.service.ballot('user-a')).targetDay,'2026-10-13');
@@ -177,4 +177,18 @@ test('API permits all authenticated accounts to vote and keeps public daily topi
  const unchanged=await (await fetch(`${base}/challenge`)).json();assert.equal(unchanged.id,'2026-10-11');
  f.advance();const next=await (await fetch(`${base}/challenge`)).json();
  assert.deepEqual(next,{id:ballot.targetDay,topic:ballot.choices[2].topic});
+});
+
+test('UTC midnight does not close the poll; EST rollover chooses the highest count and supplies three new topics',async t=>{
+ const f=fixture(t),poll=await f.service.ballot('first');
+ await f.service.vote('first',poll.targetDay,poll.choices[0].id);
+ for(const owner of ['second','third','fourth'])await f.service.vote(owner,poll.targetDay,poll.choices[2].id);
+ f.setTime('2026-10-12T00:00:00Z');
+ assert.equal((await f.service.ballot('first')).targetDay,poll.targetDay);
+ await f.service.vote('fifth',poll.targetDay,poll.choices[1].id);
+ f.setTime('2026-10-12T05:00:00Z');
+ assert.equal((await f.service.challenge()).topic,poll.choices[2].topic);
+ const next=await f.service.ballot('first');
+ assert.equal(next.totalVotes,0);assert.equal(next.myVote,null);assert.equal(next.choices.length,3);
+ assert.ok(next.choices.every(choice=>!poll.choices.some(old=>old.topic.toLowerCase()===choice.topic.toLowerCase())));
 });

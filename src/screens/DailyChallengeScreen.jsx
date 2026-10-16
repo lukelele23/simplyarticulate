@@ -1,3 +1,4 @@
+import {challengeDay} from '../lib/challengeDay.js';
 import TopicVotingScreen from './TopicVotingScreen.jsx';
 import './dailyChallengeFocus.css';
 import SaveAudio from '../components/SaveAudio.jsx';
@@ -59,7 +60,7 @@ export default function DailyChallengeScreen({
   const recorderRef = useRef(null);
   const speechDeadline = useRef(0);
   const finishingRef = useRef(false);
-  const currentDay=now.toISOString().slice(0,10);
+  const currentDay=challengeDay(now);
   const dailyTopic = useDailyTopic(currentDay);
   const [activeChallenge,setActiveChallenge]=useState(null);
   const [isRecovered,setIsRecovered]=useState(false);

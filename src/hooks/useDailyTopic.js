@@ -1,8 +1,9 @@
+import {challengeDay} from '../lib/challengeDay.js';
 import {useEffect,useState} from 'react';
 import {analysisRequest} from '../lib/speechAnalysis.js';
 
 // Use the same official topic as the analysis service, including subscriber votes.
-export default function useDailyTopic(day=new Date().toISOString().slice(0,10)) {
+export default function useDailyTopic(day=challengeDay()) {
  const [state,setState]=useState({day,topic:'',isLoading:true,error:''});
  useEffect(()=>{
   const controller=new AbortController();

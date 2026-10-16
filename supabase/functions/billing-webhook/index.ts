@@ -8,7 +8,7 @@ Deno.serve(async request=>{
   const env=Deno.env.toObject();
   const config=billingConfig(env);
   const db=createClient(env.SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
-  return await createBillingWebhook(db,config,()=>getPaddleSdk(config),job=>EdgeRuntime.waitUntil(job))(request);
+  return await createBillingWebhook(db,config,()=>getPaddleSdk(config),(job:Promise<unknown>)=>EdgeRuntime.waitUntil(job))(request);
  }catch{
   return new Response(JSON.stringify({error:'Billing server configuration is incomplete. Set the explicit environment and server secrets.'}),{status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
  }

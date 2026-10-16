@@ -1,10 +1,13 @@
 import {billingError,checked,subscriptionSnapshot} from './billingCore.js';
+import {adjustmentSnapshots,syncAdjustmentEvent} from './billingAdjustments.js';
+import {securityFailure} from './security.js';
 
-/** @typedef {'subscription.created'|'subscription.updated'|'subscription.canceled'|'customer.created'|'customer.updated'|'transaction.completed'} BillingEventType */
+/** @typedef {'subscription.created'|'subscription.updated'|'subscription.canceled'|'customer.created'|'customer.updated'|'transaction.completed'|'adjustment.created'|'adjustment.updated'} BillingEventType */
 /** @typedef {{event_type:BillingEventType,object_id:string}} DurableBillingEvent */
 export const billingEventTypes=Object.freeze({
  'subscription.created':'sub','subscription.updated':'sub','subscription.canceled':'sub',
  'customer.created':'ctm','customer.updated':'ctm','transaction.completed':'txn',
+ 'adjustment.created':'adj','adjustment.updated':'adj',
 });
 export function routedEvent(event,config){
  const prefix=billingEventTypes[event.eventType];if(!prefix)return null;
@@ -39,7 +42,8 @@ export async function syncPaddleSubscription(db,sdk,id,config){
   items:sub.items.map(item=>({quantity:item.quantity,price:{id:item.price.id,product_id:item.price.productId}})),
   current_billing_period:sub.currentBillingPeriod?{starts_at:sub.currentBillingPeriod.startsAt,ends_at:sub.currentBillingPeriod.endsAt}:null,
   scheduled_change:sub.scheduledChange?{action:sub.scheduledChange.action,effective_at:sub.scheduledChange.effectiveAt}:null},Object.keys(config.catalog));
- await checked(db.rpc('billing_apply_subscription',{p_snapshot:snapshot}));return snapshot;
+ const adjustments=await sdkCall(adjustmentSnapshots(sdk,sub));
+ await checked(db.rpc('billing_apply_subscription_secure',{p_snapshot:snapshot,p_adjustments:adjustments}));return snapshot;
 }
 export async function syncCompletedTransaction(db,sdk,id,config){
  const transaction=await sdkCall(sdk.transactions.get(id));if(transaction.id!==id||!transaction.customerId)throw billingError('Transaction identity mismatch.');
@@ -55,6 +59,7 @@ export async function handleBillingEvent(db,sdk,event,config){
    return syncPaddleSubscription(db,sdk,event.object_id,config);
   case 'customer.created':case 'customer.updated':return syncCustomer(db,sdk,event.object_id);
   case 'transaction.completed':return syncCompletedTransaction(db,sdk,event.object_id,config);
+  case 'adjustment.created':case 'adjustment.updated':return syncAdjustmentEvent(db,sdk,event.object_id,config,syncPaddleSubscription,sdkCall);
   default:return; // Previously queued, unsupported events are safely marked processed without mutation.
  }
 }
@@ -64,7 +69,8 @@ export async function processFulfillmentEvent(db,config,sdk){
   await handleBillingEvent(db,sdk,event,config);
   await checked(db.from('billing_events').update({state:'processed',lease_id:null,leased_until:null,error_code:null})
    .eq('event_id',event.event_id).eq('lease_id',event.lease_id));
- }catch{
+ }catch(error){
+  securityFailure('billing_event_retry',error);
   await checked(db.from('billing_events').update({state:'failed',leased_until:null,lease_id:null,error_code:'reconciliation_required',
    next_attempt_at:new Date(Date.now()+Math.min(3600,30*2**event.attempts)*1000).toISOString()})
    .eq('event_id',event.event_id).eq('lease_id',event.lease_id));

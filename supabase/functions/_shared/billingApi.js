@@ -1,4 +1,5 @@
 import {enforcePaddleSource} from './paddleSource.js';
+import {authRate,billingRate,securityEvent,securityFailure} from './security.js';
 import {billingError,checked,limitedBody,verifiedEvent} from './billingCore.js';
 import {billingStatus,createCheckout} from './billingService.js';
 import {accountAccess,customerPortal} from './billingAccess.js';
@@ -16,17 +17,20 @@ export function createBillingApi(db,config,paddle,sdkProvider){
   try{
    const token=request.headers.get('authorization')?.match(/^Bearer (.+)$/i)?.[1];
    if(!token)throw billingError('Sign in to manage your subscription.',401);
+   if(token.length>8192)throw billingError('Invalid session.',401);
+   await authRate(db,token);
    const {data,error}=await db.auth.getUser(token);if(error||!data.user)throw billingError('Sign in again to continue.',401);
    let body;try{body=JSON.parse(await limitedBody(request,1024));}catch{throw billingError('Invalid billing request.',400);}
    // Account, price and environment always come from the authenticated server context.
    if(!body||typeof body!=='object'||!['status','access','checkout','portal'].includes(body.action)
     ||Object.keys(body).some(key=>!['action',...(body.action==='checkout'?['priceId']:[])].includes(key))
     ||(body.action==='checkout'&&!config.catalog?.[body.priceId]))throw billingError('Invalid billing request.',400);
+   await billingRate(db,'account:'+data.user.id+':'+body.action,{access:60,status:30,checkout:5,portal:5}[body.action]);
    if(body.action==='access')return reply(await accountAccess(db,data.user.id,config));
    if(body.action==='status')return reply({...await billingStatus(db,data.user,config),...await accountAccess(db,data.user.id,config)});
    if(body.action==='checkout')return reply(await createCheckout(db,data.user,config,paddle,body.priceId));
    return reply(await sdkCall(customerPortal(db,data.user,sdkProvider(),config)));
-  }catch(error){return reply({error:error.status?error.message:'Billing is temporarily unavailable.'},error.status||503);}
+  }catch(error){const status=error.status||503;securityEvent('billing_request_rejected',status);if(status===429)headers['Retry-After']='60';return reply({error:error.status?error.message:'Billing is temporarily unavailable.'},status);}
  };
 }
 
@@ -44,7 +48,7 @@ export function createBillingWebhook(db,config,sdkProvider,background){
     if(background){try{background(processFulfillmentEvent(db,config,sdk));}catch{/* The permanent queue remains available to the worker. */}}
    }
    return new Response('ok',{headers:{'Cache-Control':'no-store'}});
-  }catch(error){return new Response('Webhook not accepted',{status:error.status||503});}
+  }catch(error){securityEvent('billing_webhook_rejected',error.status||503);return new Response('Webhook not accepted',{status:error.status||503});}
  };
 }
 
@@ -60,6 +64,6 @@ export function createBillingWorker(db,config,_paddle,sdkProvider){
    const subscriptions=await checked(db.from('billing_subscriptions').select('paddle_subscription_id').order('reconciled_at').limit(2));
    for(const s of subscriptions)await syncPaddleSubscription(db,sdk,s.paddle_subscription_id,config);
    return new Response('ok',{headers:{'Cache-Control':'no-store'}});
-  }catch{return new Response('Billing reconciliation needs attention',{status:503});}
+  }catch(error){securityFailure('billing_reconciliation_failed',error);return new Response('Billing reconciliation needs attention',{status:503});}
  };
 }

@@ -2,8 +2,7 @@ import {existsSync,readFileSync,writeFileSync,renameSync,mkdirSync} from 'node:f
 import path from 'node:path';
 import {selectDailyTopic} from '../src/lib/practice.js';
 
-const dayAt = time => new Date(time).toISOString().slice(0,10);
-const tomorrowAt = time => dayAt(Date.parse(`${dayAt(time)}T00:00:00Z`)+86400000);
+import {challengeDay as dayAt,nextChallengeDay as tomorrowAt,challengeDayStart} from '../src/lib/challengeDay.js';
 const failure = (message,status) => Object.assign(new Error(message),{status});
 const fallbackTopics=[
  'Describe a small habit that can make a big difference in everyday life.',
@@ -41,10 +40,11 @@ export function topicVoting(config,fetchImpl=fetch,now=Date.now) {
   return topics.length?topics:fallbackTopics;
   }catch{return fallbackTopics;}
  }
- function completeChoices(choices,targetDay,today){
+ function completeChoices(choices,targetDay,today,excluded=[]){
   const completed=[...choices];
   const seen=new Set(completed.map(choice=>choice.topic.toLowerCase()));
   if(today)seen.add(today.toLowerCase());
+  for(const topic of excluded)seen.add(topic.toLowerCase());
   const available=fallbackTopics.filter(row=>!seen.has(row.topic.toLowerCase()));
   const first=selectDailyTopic(available,new Date(`${targetDay}T12:00:00Z`));
   const offset=available.indexOf(first);
@@ -56,8 +56,9 @@ export function topicVoting(config,fetchImpl=fetch,now=Date.now) {
  }
  function storedPoll(targetDay){
   const poll=data.polls[targetDay];
-  if(!poll||poll.choices.length>=3)return poll;
-  const updated={...poll,choices:completeChoices(poll.choices,targetDay,data.challenges[dayAt(now())])};
+  if(!poll)return poll;
+  if(poll.choices.length>=3&&poll.closesAt===challengeDayStart(targetDay))return poll;
+  const updated={...poll,closesAt:challengeDayStart(targetDay),choices:completeChoices(poll.choices,targetDay,data.challenges[dayAt(now())])};
   commit({...data,polls:{...data.polls,[targetDay]:updated}});
   return updated;
  }
@@ -87,12 +88,14 @@ export function topicVoting(config,fetchImpl=fetch,now=Date.now) {
   if(data.polls[targetDay])return storedPoll(targetDay);
   const seen=new Set();
   const unique=rows.filter(row=>{const key=row.topic.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;});
-  const different=unique.filter(row=>row.topic.toLowerCase()!==today.topic.toLowerCase());
-  const available=different.length?different:fallbackTopics.filter(row=>row.topic.toLowerCase()!==today.topic.toLowerCase());
+  const previousTopics=(data.polls[today.id]?.choices||[]).map(choice=>choice.topic);
+  const excluded=new Set([today.topic,...previousTopics].map(topic=>topic.toLowerCase()));
+  const different=unique.filter(row=>!excluded.has(row.topic.toLowerCase()));
+  const available=different.length?different:fallbackTopics.filter(row=>!excluded.has(row.topic.toLowerCase()));
   const first=selectDailyTopic(available,new Date(`${targetDay}T12:00:00Z`));
   const offset=available.indexOf(first);
-  const choices=completeChoices(Array.from({length:Math.min(3,available.length)},(_,index)=>({id:`choice-${index+1}`,topic:available[(offset+index)%available.length].topic})),targetDay,today.topic);
-  const poll={targetDay,closesAt:`${targetDay}T00:00:00.000Z`,choices,votes:[]};
+  const choices=completeChoices(Array.from({length:Math.min(3,available.length)},(_,index)=>({id:`choice-${index+1}`,topic:available[(offset+index)%available.length].topic})),targetDay,today.topic,previousTopics);
+  const poll={targetDay,closesAt:challengeDayStart(targetDay),choices,votes:[]};
   commit({...data,polls:{...data.polls,[targetDay]:poll}});
   return poll;
  }

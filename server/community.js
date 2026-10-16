@@ -1,3 +1,4 @@
+import {challengeDay} from '../src/lib/challengeDay.js';
 import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -82,7 +83,7 @@ export function communityStore(directory) {
   publish(owner,job,shareTranscript){
    const review=job.result?.communityReview;
    if(job.result?.demo || !review?.eligible || review.moderation!=='allow')throw Object.assign(new Error('This take has not passed community review.'),{status:409});
-   if(job.metadata.challengeId!==new Date().toISOString().slice(0,10))throw Object.assign(new Error('This challenge has ended. Join the next daily challenge.'),{status:409});
+   if(job.metadata.challengeId!==challengeDay())throw Object.assign(new Error('This challenge has ended. Join the next daily challenge.'),{status:409});
    const existing=entries.find(e=>e.owner===owner&&e.day===job.metadata.challengeId);
    if(existing){if(existing.withdrawn)throw Object.assign(new Error("Your entry was withdrawn. You can join again tomorrow."),{status:409});if(existing.sourceJob!==job.id)throw Object.assign(new Error('You already entered today. Practice retries do not replace your entry.'),{status:409});return publicEntry(existing);}
    if(entries.some(e=>!e.withdrawn&&e.day===job.metadata.challengeId&&e.name.toLowerCase()===job.metadata.publicUsername.toLowerCase()))throw Object.assign(new Error("That username is already used today. Choose another on your next take."),{status:409});

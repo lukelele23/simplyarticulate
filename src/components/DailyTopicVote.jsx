@@ -77,8 +77,8 @@ export default function DailyTopicVote({user,day,request=analysisRequest,publicV
     <p>{poll.totalVotes?`${poll.totalVotes} ${poll.totalVotes===1?'vote':'votes'} cast`:'No votes yet.'}</p>
     <div className="topic-vote-access"><p>Everyone can view the results. All signed-in users can vote.</p>{!user&&onSignUp&&<button className="secondary-button" type="button" onClick={onSignUp}>Sign in</button>}</div>
    </>}
-   <p className="topic-vote-small">One vote per account. Voting closes at midnight UTC. Ties use the order shown above. With no votes, the usual topic rotation applies.</p>
-   <p className="topic-vote-small">Results refresh every 30 seconds. Percentages are rounded to one decimal place.</p>
+   <p className="topic-vote-small">One vote per account. Ties use the order shown above. With no votes, the usual topic rotation applies.</p>
+   <p className="topic-vote-small">Percentages are rounded to one decimal place.</p>
    {closed&&<p role="status">This vote has closed. Refresh the choices to see the next challenge.</p>}
   </>}
   {notice&&<p role="status">{notice}</p>}

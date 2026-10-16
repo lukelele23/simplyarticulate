@@ -35,7 +35,7 @@ export function subscriptionSnapshot(subscription,priceId){
   updated_at:subscription.updated_at};
 }
 export function entitlement(subscription,now=Date.now(),catalog={},environment='sandbox'){
- const active=subscription?.eligible&&['active','trialing'].includes(subscription.status);
+ const active=subscription?.eligible&&subscription.adjustments_checked!==false&&!subscription.access_blocked&&['active','trialing'].includes(subscription.status);
  return {plan:active?(catalog[subscription.paddle_price_id]?.tier||'pro'):'free',environment,paidAnalysis:false};
 }
 export function paddleClient(config,fetchImpl=fetch){
@@ -60,12 +60,15 @@ export async function verifiedEvent(raw,signature,secret,sdk){
  if(ts.length!==1||!/^\d+$/.test(ts[0][1])||Math.abs(Date.now()/1000-Number(ts[0][1]))>60)throw billingError('Invalid webhook.',401);
  return event;
 }
-export async function limitedBody(request,limit=131072){
+export async function limitedBody(request,limit=131072,timeoutMs=10000){
  const reader=request.body?.getReader();if(!reader)return '';
- let size=0;const chunks=[];
- for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;
+ let size=0;const chunks=[];let timer;
+ const deadline=new Promise((_,reject)=>{timer=setTimeout(()=>{reject(billingError('Request timed out.',408));void reader.cancel().catch(()=>{});},timeoutMs);});
+ try{
+ for(;;){const {done,value}=await Promise.race([reader.read(),deadline]);if(done)break;size+=value.length;
   if(size>limit){await reader.cancel();throw billingError('Request too large.',413);}chunks.push(value);}
  const combined=new Uint8Array(size);let offset=0;for(const c of chunks){combined.set(c,offset);offset+=c.length;}
  return new TextDecoder('utf-8',{fatal:true}).decode(combined);
+ }finally{clearTimeout(timer);reader.releaseLock();}
 }
-export async function checked(query){const result=await query;if(result.error)throw billingError('Billing records could not be updated.');return result.data;}
+export async function checked(query){const result=await query;if(result.error)throw Object.assign(billingError('Billing records could not be updated.'),{category:'database'});return result.data;}
